@@ -180,7 +180,16 @@ let elements = {};
 
 // Constants
 const DAYS_OF_WEEK = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
+const DAYS_OF_WEEK_DE = ['Montag', 'Dienstag', 'Mittwoch', 'Donnerstag', 'Freitag', 'Samstag', 'Sonntag'];
 const SHIFT_TYPES = ['AM', 'PM', 'Night'];
+
+// Get localized day name
+function getLocalizedDay(day) {
+    const dayIndex = DAYS_OF_WEEK.indexOf(day);
+    if (dayIndex === -1) return day;
+    
+    return currentLanguage === 'de' ? DAYS_OF_WEEK_DE[dayIndex] : DAYS_OF_WEEK[dayIndex];
+}
 
 // Safely initialize Bootstrap modals
 function initModals() {
@@ -1309,7 +1318,7 @@ function renderSchedule() {
         
         // Day column
         const dayCell = document.createElement('td');
-        dayCell.textContent = day;
+        dayCell.textContent = getLocalizedDay(day);
         if (daySchedule.date) {
             const date = new Date(daySchedule.date);
             dayCell.textContent += ` (${formatDate(date)})`;
@@ -1322,14 +1331,16 @@ function renderSchedule() {
             skillsContainer.classList.add('mt-2', 'small', 'skills-summary');
             
             const skillsLabel = document.createElement('strong');
-            skillsLabel.textContent = 'Skills available today: ';
+            skillsLabel.textContent = currentLanguage === 'de' ? 'Verfügbare Fähigkeiten heute: ' : 'Skills available today: ';
             skillsContainer.appendChild(skillsLabel);
             
             daySkillSummary.forEach(skill => {
                 const skillBadge = document.createElement('span');
                 skillBadge.classList.add('badge', 'bg-success', 'me-1');
                 skillBadge.textContent = skill.name;
-                skillBadge.title = `${skill.count} employees with this skill available`;
+                skillBadge.title = currentLanguage === 'de' 
+                    ? `${skill.count} Mitarbeiter mit dieser Fähigkeit verfügbar` 
+                    : `${skill.count} employees with this skill available`;
                 skillsContainer.appendChild(skillBadge);
             });
             
@@ -1429,7 +1440,7 @@ function renderSchedule() {
                     skillsDiv.classList.add('mt-2', 'shift-skills-summary', 'small');
                     
                     const skillsLabel = document.createElement('strong');
-                    skillsLabel.textContent = 'Skills: ';
+                    skillsLabel.textContent = currentLanguage === 'de' ? 'Fähigkeiten: ' : 'Skills: ';
                     skillsDiv.appendChild(skillsLabel);
                     
                     shiftSkills.forEach(skillId => {
@@ -1445,7 +1456,7 @@ function renderSchedule() {
                     employeesList.appendChild(skillsDiv);
                 }
             } else {
-                employeesList.textContent = 'No employees assigned';
+                employeesList.textContent = currentLanguage === 'de' ? 'Keine Mitarbeiter zugewiesen' : 'No employees assigned';
             }
             
             shiftCell.appendChild(employeesList);
@@ -1456,7 +1467,9 @@ function renderSchedule() {
                 shiftCell.style.cursor = 'pointer';
             } else {
                 shiftCell.style.cursor = 'not-allowed';
-                shiftCell.title = 'This week is locked. Unlock it to make changes.';
+                shiftCell.title = currentLanguage === 'de' 
+                    ? 'Diese Woche ist gesperrt. Entsperren Sie sie, um Änderungen vorzunehmen.' 
+                    : 'This week is locked. Unlock it to make changes.';
                 shiftCell.classList.add('disabled-cell');
             }
             
@@ -1683,12 +1696,20 @@ function updateLockButton(isLocked) {
             
             // If currently locked, confirm unlock
             if (currentlyLocked) {
-                if (confirm('Are you sure you want to unlock this week? This will allow edits to the schedule.')) {
+                const confirmMsg = currentLanguage === 'de'
+                    ? 'Sind Sie sicher, dass Sie diese Woche entsperren möchten? Dies ermöglicht Änderungen am Zeitplan.'
+                    : 'Are you sure you want to unlock this week? This will allow edits to the schedule.';
+                
+                if (confirm(confirmMsg)) {
                     toggleWeekLock(weekIndex, false);
                 }
             } else {
                 // If unlocked, confirm lock
-                if (confirm('Are you sure you want to lock this week? This will prevent further changes until unlocked.')) {
+                const confirmMsg = currentLanguage === 'de'
+                    ? 'Sind Sie sicher, dass Sie diese Woche sperren möchten? Dies verhindert weitere Änderungen, bis die Woche entsperrt wird.'
+                    : 'Are you sure you want to lock this week? This will prevent further changes until unlocked.';
+                
+                if (confirm(confirmMsg)) {
                     toggleWeekLock(weekIndex, true);
                 }
             }
@@ -1697,11 +1718,11 @@ function updateLockButton(isLocked) {
     
     // Update button appearance based on lock state
     if (isLocked) {
-        lockButton.textContent = '🔓 Unlock Week';
+        lockButton.textContent = currentLanguage === 'de' ? '🔓 Woche entsperren' : '🔓 Unlock Week';
         lockButton.classList.remove('btn-danger');
         lockButton.classList.add('btn-success');
     } else {
-        lockButton.textContent = '🔒 Lock Week';
+        lockButton.textContent = currentLanguage === 'de' ? '🔒 Woche sperren' : '🔒 Lock Week';
         lockButton.classList.remove('btn-success');
         lockButton.classList.add('btn-danger');
     }

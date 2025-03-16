@@ -29,7 +29,23 @@
     "status": {
       "locked": "Gesperrt",
       "editable": "Bearbeitbar"
-    }
+    },
+    "lockWeek": "Woche sperren",
+    "unlockWeek": "Woche entsperren",
+    "skillsAvailableToday": "Verfügbare Fähigkeiten heute",
+    "employeesWithSkill": "Mitarbeiter mit dieser Fähigkeit verfügbar",
+    "weekIsLocked": "Diese Woche ist gesperrt. Entsperren Sie sie, um Änderungen vorzunehmen.",
+    "confirmLock": "Sind Sie sicher, dass Sie diese Woche sperren möchten? Dies verhindert weitere Änderungen, bis die Woche entsperrt wird.",
+    "confirmUnlock": "Sind Sie sicher, dass Sie diese Woche entsperren möchten? Dies ermöglicht Änderungen am Zeitplan."
+  },
+  "days": {
+    "monday": "Montag",
+    "tuesday": "Dienstag",
+    "wednesday": "Mittwoch",
+    "thursday": "Donnerstag",
+    "friday": "Freitag",
+    "saturday": "Samstag",
+    "sunday": "Sonntag"
   },
   "employees": {
     "title": "Mitarbeiter",
