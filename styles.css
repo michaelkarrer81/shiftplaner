@@ -1,0 +1,256 @@
+body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+    padding: 20px 0;
+    background-color: #f8f9fa;
+}
+
+.container-fluid {
+    max-width: 1400px;
+    margin: 0 auto;
+}
+
+.table th {
+    background-color: #f8f9fa;
+}
+
+.table-hover tbody tr:hover {
+    background-color: rgba(0, 123, 255, 0.05);
+}
+
+.navbar {
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    margin-bottom: 30px !important;
+}
+
+.card {
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    border: none;
+    margin-bottom: 20px;
+}
+
+.card-header {
+    background-color: #f8f9fa;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.125);
+}
+
+.employee-absent {
+    background-color: #ffebee !important;
+}
+
+.schedule-cell {
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.schedule-cell:hover {
+    background-color: #e9ecef;
+}
+
+.team-badge {
+    display: inline-block;
+    padding: 0.25em 0.6em;
+    font-size: 75%;
+    font-weight: 700;
+    line-height: 1;
+    text-align: center;
+    white-space: nowrap;
+    vertical-align: baseline;
+    border-radius: 0.25rem;
+    margin-right: 0.5rem;
+}
+
+.team-a-badge {
+    background-color: #cce5ff;
+    color: #004085;
+}
+
+.team-b-badge {
+    background-color: #d4edda;
+    color: #155724;
+}
+
+.team-c-badge {
+    background-color: #f8d7da;
+    color: #721c24;
+}
+
+.list-group-item {
+    border-left: 0;
+    border-right: 0;
+}
+
+.absent-date-pill {
+    background-color: #dc3545;
+    color: white;
+    border-radius: 10rem;
+    display: inline-block;
+    padding: 0.25em 0.6em;
+    font-size: 75%;
+    font-weight: 700;
+    margin: 0.2rem;
+}
+
+.team-header {
+    color: #495057;
+    font-weight: 600;
+}
+
+/* New styles for version control and locking */
+#status-banner {
+    border-left-width: 4px;
+}
+
+.disabled-cell {
+    opacity: 0.7;
+    background-color: #f8f9fa;
+}
+
+.disabled-cell:hover {
+    background-color: #f8f9fa !important;
+}
+
+#version-controls {
+    background-color: #f8f9fa;
+    padding: 10px;
+    border-radius: 4px;
+    margin-bottom: 15px;
+    border-top: 1px solid #e9ecef;
+}
+
+#version-selector {
+    min-width: 250px;
+    max-width: 400px;
+    flex-grow: 1;
+}
+
+/* Add some space between the version controls and the buttons */
+#version-controls button {
+    margin-left: 5px;
+}
+
+/* Style for locked weeks in the dropdown */
+select option:disabled {
+    color: #6c757d;
+    font-style: italic;
+}
+
+/* Add styles for version badges */
+.version-badge {
+    background-color: #17a2b8;
+    color: white;
+    border-radius: 4px;
+    display: inline-block;
+    padding: 0.25em 0.6em;
+    font-size: 75%;
+    font-weight: 700;
+    margin-left: 0.5rem;
+}
+
+/* Hover effect for version selector */
+#version-selector:hover {
+    border-color: #6c757d;
+}
+
+/* Styles for absent employees */
+s {
+    text-decoration: line-through;
+    opacity: 0.8;
+}
+
+.absent-employee {
+    color: #dc3545;
+}
+
+/* Skill management styles */
+.skills-summary {
+    margin-top: 6px;
+    padding: 3px;
+    background-color: transparent;
+    border-radius: 3px;
+    font-size: 80%;
+    color: #6c757d;
+}
+
+.skills-summary .badge {
+    background-color: #e9ecef !important;
+    color: #6c757d !important;
+    font-weight: normal;
+    border: 1px solid #dee2e6;
+    margin-right: 3px;
+    font-size: 75%;
+    padding: 2px 5px;
+}
+
+.shift-skills-summary {
+    padding: 4px 0;
+    margin-top: 6px;
+    border-top: 1px dotted #e9ecef;
+    font-size: 75%;
+    color: #6c757d;
+}
+
+.shift-skills-summary strong {
+    font-weight: normal;
+    font-style: italic;
+}
+
+.shift-skills-summary .badge {
+    background-color: #f8f9fa !important;
+    color: #6c757d !important;
+    font-weight: normal;
+    border: 1px solid #e9ecef;
+    margin-right: 3px;
+    font-size: 75%;
+    padding: 1px 4px;
+}
+
+.employee-skills {
+    display: none; /* Hide employee-level skills completely */
+    margin-top: 2px;
+    margin-bottom: 3px;
+    opacity: 0.6;
+}
+
+.employee-skills .badge {
+    background-color: #f8f9fa !important;
+    color: #6c757d !important;
+    font-weight: normal;
+    border: 1px solid #e9ecef;
+    font-size: 70%;
+    padding: 1px 3px;
+}
+
+#weekly-skill-summary {
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+    margin-top: 20px; /* Add margin to separate it from the schedule table */
+    border: 1px solid #e9ecef;
+}
+
+#weekly-skill-summary .card-header {
+    background-color: #f8f9fa;
+    color: #6c757d;
+    font-weight: normal;
+    font-size: 90%;
+    border-bottom: 1px solid #e9ecef;
+    padding: 8px 15px;
+}
+
+#weekly-skill-summary .list-group-item {
+    transition: background-color 0.2s;
+    padding: 8px 15px;
+    font-size: 85%;
+    color: #6c757d;
+    border-color: #e9ecef;
+}
+
+#weekly-skill-summary .list-group-item:hover {
+    background-color: #f8f9fa;
+}
+
+#weekly-skill-summary .badge {
+    background-color: #e9ecef !important;
+    color: #6c757d !important;
+    font-weight: normal;
+    border: 1px solid #dee2e6;
+    padding: 2px 5px;
+} 
