@@ -77,6 +77,8 @@ function updateUILanguage() {
     document.getElementById('data-dropdown').textContent = t('nav.dataManagement');
     document.getElementById('export-data-button').textContent = t('nav.exportData');
     document.getElementById('import-data-button').textContent = t('nav.importData');
+    document.getElementById('clear-data-button').textContent = t('nav.clearData');
+    document.getElementById('load-demo-button').textContent = t('nav.loadDemo');
     
     // Update loading text
     document.querySelector('.spinner-border .visually-hidden').textContent = t('app.loading');
@@ -87,6 +89,8 @@ function updateUILanguage() {
     // Update tooltips
     document.getElementById('export-data-button').title = t('tooltips.exportData');
     document.getElementById('import-data-button').title = t('tooltips.importData');
+    document.getElementById('clear-data-button').title = t('tooltips.clearData');
+    document.getElementById('load-demo-button').title = t('tooltips.loadDemo');
     
     // Update the current view based on which view is active
     if (currentView === 'schedule') updateScheduleView();
@@ -308,7 +312,9 @@ function initAfterDOM() {
             saveSkillBtn: document.getElementById('save-skill-btn'),
             
             exportDataButton: document.getElementById('export-data-button'),
-            importDataButton: document.getElementById('import-data-button')
+            importDataButton: document.getElementById('import-data-button'),
+            clearDataButton: document.getElementById('clear-data-button'),
+            loadDemoButton: document.getElementById('load-demo-button')
         };
 
         // Verify critical elements exist
@@ -709,6 +715,14 @@ function setupEventListeners() {
     
     if (elements.importDataButton) {
         elements.importDataButton.addEventListener('click', openImportDialog);
+    }
+    
+    if (elements.clearDataButton) {
+        elements.clearDataButton.addEventListener('click', clearAllData);
+    }
+    
+    if (elements.loadDemoButton) {
+        elements.loadDemoButton.addEventListener('click', loadDemoData);
     }
     
     // Employees
@@ -1589,7 +1603,7 @@ function generateWeeklySkillSummary(weekIndex) {
     // Create the HTML for the summary with updated styling for a more gentle look
     let html = `
         <div class="card-header">
-            <h6 class="mb-0">Weekly Skill Coverage Summary</h6>
+            <h6 class="mb-0">${currentLanguage === 'de' ? 'Wöchentliche Fähigkeiten-Abdeckungsübersicht' : 'Weekly Skill Coverage Summary'}</h6>
         </div>
         <div class="card-body">
             <div class="row">
@@ -1609,9 +1623,19 @@ function generateWeeklySkillSummary(weekIndex) {
             })
             .sort((a, b) => b.count - a.count);
         
+        // Get shift type label based on language
+        let shiftLabel;
+        if (currentLanguage === 'de') {
+            if (shiftType === 'AM') shiftLabel = 'Frühschicht';
+            else if (shiftType === 'PM') shiftLabel = 'Spätschicht';
+            else if (shiftType === 'Night') shiftLabel = 'Nachtschicht';
+        } else {
+            shiftLabel = `${shiftType} Shifts`;
+        }
+        
         html += `
             <div class="col-md-4">
-                <h6>${shiftType} Shifts</h6>
+                <h6>${shiftLabel}</h6>
                 <div class="list-group mb-3">
         `;
         
@@ -1625,7 +1649,7 @@ function generateWeeklySkillSummary(weekIndex) {
                 `;
             });
         } else {
-            html += `<div class="list-group-item">No skills available</div>`;
+            html += `<div class="list-group-item">${currentLanguage === 'de' ? 'Keine Fähigkeiten verfügbar' : 'No skills available'}</div>`;
         }
         
         html += `
@@ -1665,14 +1689,14 @@ function updateStatusBanner(weekIndex, isLocked, activeVersion) {
     if (isLocked) {
         statusBanner.className = 'small mb-2 text-warning border-top pt-1';
         statusBanner.innerHTML = `
-            🔒 <span>Week ${weekIndex + 1} is locked</span> 
-            <span class="ms-1">(Current version: ${activeVersion ? activeVersion.name : 'Unknown'})</span>
+            🔒 <span>${currentLanguage === 'de' ? `Woche ${weekIndex + 1} ist gesperrt` : `Week ${weekIndex + 1} is locked`}</span> 
+            <span class="ms-1">(${currentLanguage === 'de' ? 'Aktuelle Version' : 'Current version'}: ${activeVersion ? activeVersion.name : 'Unknown'})</span>
         `;
     } else {
         statusBanner.className = 'small mb-2 text-info border-top pt-1';
         statusBanner.innerHTML = `
-            ✏️ <span>Week ${weekIndex + 1} is editable</span>
-            <span class="ms-1">(Current version: ${activeVersion ? activeVersion.name : 'Unknown'})</span>
+            ✏️ <span>${currentLanguage === 'de' ? `Woche ${weekIndex + 1} ist bearbeitbar` : `Week ${weekIndex + 1} is editable`}</span>
+            <span class="ms-1">(${currentLanguage === 'de' ? 'Aktuelle Version' : 'Current version'}: ${activeVersion ? activeVersion.name : 'Unknown'})</span>
         `;
     }
 }
@@ -2346,7 +2370,7 @@ function createWeeklySummarySheet(workbook, weekIndex, weekTitle, versionInfo, s
     const weekDates = appData.weekDates[weekIndex] || [];
     
     // Create sheet
-    const worksheet = workbook.addWorksheet('Weekly Summary', {
+    const worksheet = workbook.addWorksheet(currentLanguage === 'de' ? 'Wöchentliche Übersicht' : 'Weekly Summary', {
         properties: { tabColor: { argb: colors.titleBg } }
     });
     
@@ -2368,7 +2392,9 @@ function createWeeklySummarySheet(workbook, weekIndex, weekTitle, versionInfo, s
     applyCellBorders(titleRow, 1, 4, 'medium');
     
     // Status/Version row
-    const statusRow = worksheet.addRow([`Status: ${statusInfo} | Version: ${versionInfo}`]);
+    const statusText = currentLanguage === 'de' ? 'Status' : 'Status';
+    const versionText = currentLanguage === 'de' ? 'Version' : 'Version';
+    const statusRow = worksheet.addRow([`${statusText}: ${statusInfo} | ${versionText}: ${versionInfo}`]);
     statusRow.height = 24;
     statusRow.font = { italic: true, size: 11 };
     statusRow.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: colors.versionInfoBg } };
@@ -2382,7 +2408,7 @@ function createWeeklySummarySheet(workbook, weekIndex, weekTitle, versionInfo, s
     // ===== TEAM ASSIGNMENT SECTION =====
     
     // Team Assignment header
-    const teamHeader = worksheet.addRow(['Weekly Team Assignment Summary']);
+    const teamHeader = worksheet.addRow([currentLanguage === 'de' ? 'Wöchentliche Team-Zuweisungsübersicht' : 'Weekly Team Assignment Summary']);
     teamHeader.height = 25;
     teamHeader.font = { bold: true, size: 14 };
     teamHeader.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: colors.headerBg } };
@@ -2391,7 +2417,11 @@ function createWeeklySummarySheet(workbook, weekIndex, weekTitle, versionInfo, s
     applyCellBorders(teamHeader, 1, 4);
     
     // Team table headers
-    const shiftHeaderRow = worksheet.addRow(['Day/Date', 'AM Shift', 'PM Shift', 'Night Shift']);
+    const teamTableHeaders = currentLanguage === 'de'
+        ? ['Tag/Datum', 'Frühschicht', 'Spätschicht', 'Nachtschicht']
+        : ['Day/Date', 'AM Shift', 'PM Shift', 'Night Shift'];
+    
+    const shiftHeaderRow = worksheet.addRow(teamTableHeaders);
     shiftHeaderRow.height = 20;
     shiftHeaderRow.font = { bold: true, size: 12 };
     shiftHeaderRow.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: colors.subHeaderBg } };
@@ -2469,7 +2499,7 @@ function createWeeklySummarySheet(workbook, weekIndex, weekTitle, versionInfo, s
     
     // Skill Coverage header
     const skillRowIndex = worksheet.rowCount;
-    const skillHeader = worksheet.addRow(['Weekly Skill Coverage Summary']);
+    const skillHeader = worksheet.addRow([currentLanguage === 'de' ? 'Wöchentliche Fähigkeiten-Abdeckungsübersicht' : 'Weekly Skill Coverage Summary']);
     skillHeader.height = 25;
     skillHeader.font = { bold: true, size: 14 };
     skillHeader.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: colors.headerBg } };
@@ -2478,7 +2508,11 @@ function createWeeklySummarySheet(workbook, weekIndex, weekTitle, versionInfo, s
     applyCellBorders(skillHeader, 1, 4);
     
     // Skill table headers
-    const skillHeaderRow = worksheet.addRow(['Skill', 'AM Shift Coverage', 'PM Shift Coverage', 'Night Shift Coverage']);
+    const skillTableHeaders = currentLanguage === 'de' 
+        ? ['Fähigkeit', 'Frühschicht-Abdeckung', 'Spätschicht-Abdeckung', 'Nachtschicht-Abdeckung']
+        : ['Skill', 'AM Shift Coverage', 'PM Shift Coverage', 'Night Shift Coverage'];
+    
+    const skillHeaderRow = worksheet.addRow(skillTableHeaders);
     skillHeaderRow.height = 20;
     skillHeaderRow.font = { bold: true, size: 12 };
     skillHeaderRow.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: colors.subHeaderBg } };
@@ -2523,11 +2557,12 @@ function createWeeklySummarySheet(workbook, weekIndex, weekTitle, versionInfo, s
     
     // Add skill coverage data
     Object.values(allSkillsMap).forEach(skillData => {
+        const employeesText = currentLanguage === 'de' ? 'Mitarbeiter' : 'employees';
         const rowData = [
             skillData.name,
-            `${skillData.shifts.AM} employees`,
-            `${skillData.shifts.PM} employees`,
-            `${skillData.shifts.Night} employees`
+            `${skillData.shifts.AM} ${employeesText}`,
+            `${skillData.shifts.PM} ${employeesText}`,
+            `${skillData.shifts.Night} ${employeesText}`
         ];
         
         const dataRow = worksheet.addRow(rowData);
@@ -2556,7 +2591,7 @@ function createWeeklySummarySheet(workbook, weekIndex, weekTitle, versionInfo, s
     
     // Exceptions header
     const exceptionRowIndex = worksheet.rowCount;
-    const exceptionHeader = worksheet.addRow(['Weekly Exceptions']);
+    const exceptionHeader = worksheet.addRow([currentLanguage === 'de' ? 'Wöchentliche Ausnahmen' : 'Weekly Exceptions']);
     exceptionHeader.height = 25;
     exceptionHeader.font = { bold: true, size: 14 };
     exceptionHeader.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: colors.headerBg } };
@@ -2565,7 +2600,11 @@ function createWeeklySummarySheet(workbook, weekIndex, weekTitle, versionInfo, s
     applyCellBorders(exceptionHeader, 1, 4);
     
     // Exceptions table headers
-    const absenceHeaderRow = worksheet.addRow(['Employee', 'Absent Date', 'Team', 'Note']);
+    const exceptionTableHeaders = currentLanguage === 'de'
+        ? ['Mitarbeiter', 'Abwesenheitsdatum', 'Team', 'Notiz']
+        : ['Employee', 'Absent Date', 'Team', 'Note'];
+    
+    const absenceHeaderRow = worksheet.addRow(exceptionTableHeaders);
     absenceHeaderRow.height = 20;
     absenceHeaderRow.font = { bold: true, size: 12 };
     absenceHeaderRow.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: colors.subHeaderBg } };
@@ -2613,7 +2652,7 @@ function createDetailedScheduleSheet(workbook, weekIndex, weekTitle, versionInfo
     const weekDates = appData.weekDates[weekIndex] || [];
     
     // Create sheet
-    const worksheet = workbook.addWorksheet('Detailed Schedule', {
+    const worksheet = workbook.addWorksheet(currentLanguage === 'de' ? 'Detaillierter Zeitplan' : 'Detailed Schedule', {
         properties: { tabColor: { argb: '4472C4' } }
     });
     
@@ -2647,7 +2686,7 @@ function createDetailedScheduleSheet(workbook, weekIndex, weekTitle, versionInfo
     worksheet.addRow([]);
     
     // Detailed Schedule header
-    const detailedHeader = worksheet.addRow(['Detailed Schedule View']);
+    const detailedHeader = worksheet.addRow([currentLanguage === 'de' ? 'Detaillierte Zeitplanansicht' : 'Detailed Schedule View']);
     detailedHeader.height = 25;
     detailedHeader.font = { bold: true, size: 14 };
     detailedHeader.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: colors.headerBg } };
@@ -2656,7 +2695,11 @@ function createDetailedScheduleSheet(workbook, weekIndex, weekTitle, versionInfo
     applyCellBorders(detailedHeader, 1, 4);
     
     // Schedule table headers
-    const headerRow = worksheet.addRow(['Day/Date', 'AM Shift', 'PM Shift', 'Night Shift']);
+    const scheduleTableHeaders = currentLanguage === 'de'
+        ? ['Tag/Datum', 'Frühschicht', 'Spätschicht', 'Nachtschicht']
+        : ['Day/Date', 'AM Shift', 'PM Shift', 'Night Shift'];
+    
+    const headerRow = worksheet.addRow(scheduleTableHeaders);
     headerRow.height = 20;
     headerRow.font = { bold: true, size: 12 };
     headerRow.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: colors.subHeaderBg } };
@@ -2758,7 +2801,7 @@ function createDetailedScheduleSheet(workbook, weekIndex, weekTitle, versionInfo
 // Create the Data Records Sheet with ExcelJS
 function createDataRecordsSheet(workbook, weekIndex, colors) {
     // Create sheet
-    const worksheet = workbook.addWorksheet('Data Records', {
+    const worksheet = workbook.addWorksheet(currentLanguage === 'de' ? 'Datensätze' : 'Data Records', {
         properties: { tabColor: { argb: '4472C4' } }
     });
     
@@ -2772,7 +2815,7 @@ function createDataRecordsSheet(workbook, weekIndex, colors) {
     ];
     
     // Title row for Employee section
-    const titleRow = worksheet.addRow(['Employee Data Records']);
+    const titleRow = worksheet.addRow([currentLanguage === 'de' ? 'Mitarbeiterdatensätze' : 'Employee Data Records']);
     titleRow.height = 30;
     titleRow.font = { bold: true, size: 16, color: { argb: colors.titleText } };
     titleRow.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: colors.titleBg } };
@@ -2784,7 +2827,11 @@ function createDataRecordsSheet(workbook, weekIndex, colors) {
     worksheet.addRow([]);
     
     // Employee table headers
-    const headerRow = worksheet.addRow(['ID', 'Name', 'Team', 'Skills', 'Absent Dates']);
+    const employeeTableHeaders = currentLanguage === 'de'
+        ? ['ID', 'Name', 'Team', 'Fähigkeiten', 'Abwesenheitsdaten']
+        : ['ID', 'Name', 'Team', 'Skills', 'Absent Dates'];
+        
+    const headerRow = worksheet.addRow(employeeTableHeaders);
     headerRow.height = 20;
     headerRow.font = { bold: true, size: 12 };
     headerRow.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: colors.headerBg } };
@@ -2805,12 +2852,14 @@ function createDataRecordsSheet(workbook, weekIndex, colors) {
             .map(dateStr => formatDate(new Date(dateStr)))
             .join(', ');
         
+        const noneText = currentLanguage === 'de' ? 'Keine' : 'None';
+        
         const rowData = [
             employee.id,
             employee.name,
             `Team ${employee.team}`,
-            skillNames || 'None',
-            absentDatesFormatted || 'None'
+            skillNames || noneText,
+            absentDatesFormatted || noneText
         ];
         
         const dataRow = worksheet.addRow(rowData);
@@ -2853,7 +2902,7 @@ function createDataRecordsSheet(workbook, weekIndex, colors) {
         dataRow.getCell(4).border = getBorderStyle();
         
         // Style absent dates cell
-        if (absentDatesFormatted !== 'None') {
+        if (absentDatesFormatted !== noneText) {
             dataRow.getCell(5).font = { size: 11, color: { argb: colors.absentText } };
             dataRow.getCell(5).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: colors.absentHighlight } };
         } else {
@@ -2869,7 +2918,7 @@ function createDataRecordsSheet(workbook, weekIndex, colors) {
     
     // Skills section title
     const skillTitleRowIndex = worksheet.rowCount;
-    const skillTitleRow = worksheet.addRow(['Skill Data Records']);
+    const skillTitleRow = worksheet.addRow([currentLanguage === 'de' ? 'Fähigkeitendatensätze' : 'Skill Data Records']);
     skillTitleRow.height = 30;
     skillTitleRow.font = { bold: true, size: 16, color: { argb: colors.titleText } };
     skillTitleRow.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: colors.titleBg } };
@@ -2878,7 +2927,11 @@ function createDataRecordsSheet(workbook, weekIndex, colors) {
     applyCellBorders(skillTitleRow, 1, 4, 'medium');
     
     // Skills table headers
-    const skillHeaderRow = worksheet.addRow(['ID', 'Name', 'Description', 'Employees with this Skill']);
+    const skillTableHeaders = currentLanguage === 'de'
+        ? ['ID', 'Name', 'Beschreibung', 'Mitarbeiter mit dieser Fähigkeit']
+        : ['ID', 'Name', 'Description', 'Employees with this Skill'];
+        
+    const skillHeaderRow = worksheet.addRow(skillTableHeaders);
     skillHeaderRow.height = 20;
     skillHeaderRow.font = { bold: true, size: 12 };
     skillHeaderRow.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: colors.headerBg } };
@@ -2892,11 +2945,13 @@ function createDataRecordsSheet(workbook, weekIndex, colors) {
             .map(employee => employee.name)
             .join(', ');
         
+        const noneText = currentLanguage === 'de' ? 'Keine' : 'None';
+        
         const rowData = [
             skill.id,
             skill.name,
             skill.description || '',
-            employeesWithSkill || 'None'
+            employeesWithSkill || noneText
         ];
         
         const dataRow = worksheet.addRow(rowData);
@@ -3265,4 +3320,160 @@ function getTeamSkills(team) {
         const skill = skills.find(s => s.id === skillId);
         return skill ? skill.name : skillId;
     });
+}
+
+// Clear all application data and start fresh
+function clearAllData() {
+    // Get confirmation message in current language
+    const confirmMessage = t('notifications.clearDataConfirm');
+    
+    // Confirm before clearing data
+    if (confirm(confirmMessage)) {
+        // Show progress indicator
+        showProgressIndicator(t('notifications.validatingData'));
+        
+        // Reset the app data to initial empty state
+        appData = {
+            employees: [],
+            skills: [],
+            schedule: {},
+            weekVersions: {},
+            lockedWeeks: {},
+            currentWeek: 0,
+            weekDates: generateNextFourWeeks()
+        };
+        
+        // Save empty data to localStorage
+        saveData();
+        
+        // Generate empty schedule for the next four weeks
+        generateSchedule();
+        
+        // Initialize version tracking for each week
+        Object.keys(appData.schedule).forEach(weekIndex => {
+            appData.weekVersions[weekIndex] = {
+                "v1": {
+                    name: "Initial Version",
+                    date: new Date().toISOString(),
+                    isActive: true,
+                    schedule: JSON.parse(JSON.stringify(appData.schedule[weekIndex]))
+                }
+            };
+            appData.lockedWeeks[weekIndex] = false;
+        });
+        
+        // Save to localStorage
+        saveData();
+        
+        // Reload the application views
+        generateWeekOptions();
+        renderSchedule();
+        renderEmployees();
+        renderTeams();
+        renderSkills();
+        
+        // Success message
+        showProgressIndicator(t('notifications.dataCleared'));
+    }
+}
+
+// Load demo data for application exploration
+function loadDemoData() {
+    // Show progress indicator
+    showProgressIndicator(t('notifications.validatingData'));
+    
+    // Initialize with sample skills
+    const defaultSkills = [
+        { id: 1, name: 'First Aid', description: 'Certified in basic first aid' },
+        { id: 2, name: 'Forklift', description: 'Licensed to operate forklifts' },
+        { id: 3, name: 'Team Lead', description: 'Can lead a team' },
+        { id: 4, name: 'Technical Support', description: 'Can provide technical assistance' },
+        { id: 5, name: 'Quality Assurance', description: 'Can perform quality checks' },
+        { id: 6, name: 'Inventory Management', description: 'Experienced in inventory control' }
+    ];
+    
+    // Initialize with sample employees data - more comprehensive than the default
+    const demoEmployees = [
+        { id: 1, name: 'John Doe', team: 'A', absentDates: [], skills: [1, 3, 5] },
+        { id: 2, name: 'Jane Smith', team: 'A', absentDates: [], skills: [1, 4, 6] },
+        { id: 3, name: 'Bob Johnson', team: 'A', absentDates: [], skills: [2, 5] },
+        { id: 4, name: 'Alice Brown', team: 'B', absentDates: [], skills: [2, 3, 4] },
+        { id: 5, name: 'Charlie Davis', team: 'B', absentDates: [], skills: [4, 6] },
+        { id: 6, name: 'Diana Evans', team: 'B', absentDates: [], skills: [1, 3] },
+        { id: 7, name: 'Edward Moore', team: 'C', absentDates: [], skills: [2, 5] },
+        { id: 8, name: 'Fiona Wilson', team: 'C', absentDates: [], skills: [3, 6] },
+        { id: 9, name: 'George Harris', team: 'C', absentDates: [], skills: [1, 4] }
+    ];
+    
+    // Add an absent date for one employee as an example
+    const today = new Date();
+    const tomorrow = new Date(today);
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    
+    // Format as YYYY-MM-DD
+    const tomorrowFormatted = formatDateISO(tomorrow);
+    demoEmployees[0].absentDates = [tomorrowFormatted];
+    
+    // Initialize app data with demo data
+    appData = {
+        employees: demoEmployees,
+        skills: defaultSkills,
+        schedule: {},
+        weekVersions: {},
+        lockedWeeks: {},
+        currentWeek: 0,
+        weekDates: generateNextFourWeeks()
+    };
+    
+    // Generate demo schedule
+    generateSchedule();
+    
+    // Initialize version tracking for each week
+    Object.keys(appData.schedule).forEach(weekIndex => {
+        // Create the initial version
+        appData.weekVersions[weekIndex] = {
+            "v1": {
+                name: "Initial Version",
+                date: new Date().toISOString(),
+                isActive: false,
+                schedule: JSON.parse(JSON.stringify(appData.schedule[weekIndex]))
+            }
+        };
+        
+        // For demo purposes, add a second version for the first week
+        if (weekIndex === '0') {
+            appData.weekVersions[weekIndex]["v2"] = {
+                name: "Optimized",
+                date: new Date().toISOString(),
+                isActive: true,
+                schedule: JSON.parse(JSON.stringify(appData.schedule[weekIndex]))
+            };
+            // Make a small change to show the difference
+            const firstDay = Object.keys(appData.weekVersions[weekIndex]["v2"].schedule)[0];
+            if (firstDay && appData.weekVersions[weekIndex]["v2"].schedule[firstDay].AM.employees.length > 0) {
+                // Swap an employee between AM and PM shifts for demonstration
+                const employee = appData.weekVersions[weekIndex]["v2"].schedule[firstDay].AM.employees[0];
+                appData.weekVersions[weekIndex]["v2"].schedule[firstDay].AM.employees.splice(0, 1);
+                appData.weekVersions[weekIndex]["v2"].schedule[firstDay].PM.employees.push(employee);
+            }
+        } else {
+            appData.weekVersions[weekIndex]["v1"].isActive = true;
+        }
+        
+        // Lock second week for demonstration
+        appData.lockedWeeks[weekIndex] = (weekIndex === '1');
+    });
+    
+    // Save to localStorage
+    saveData();
+    
+    // Reload the application views
+    generateWeekOptions();
+    renderSchedule();
+    renderEmployees();
+    renderTeams();
+    renderSkills();
+    
+    // Success message
+    showProgressIndicator(t('notifications.demoDataLoaded'));
 }

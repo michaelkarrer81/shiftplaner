@@ -14,7 +14,9 @@
     "skills": "Skills",
     "dataManagement": "Data Management",
     "exportData": "Export Data Backup",
-    "importData": "Import Data Backup"
+    "importData": "Import Data Backup",
+    "clearData": "Clear All Data",
+    "loadDemo": "Load Demo Data"
   },
   "schedule": {
     "weekLabel": "Week",
@@ -107,11 +109,16 @@
     "applyingData": "Applying imported data...",
     "confirmImport": "This will replace your current data. Continue?",
     "invalidData": "Invalid data format in import file.",
-    "importCanceled": "Import canceled."
+    "importCanceled": "Import canceled.",
+    "clearDataConfirm": "This will delete all your planning data. This action cannot be undone. Are you sure?",
+    "dataCleared": "All data has been cleared successfully.",
+    "demoDataLoaded": "Demo data has been loaded successfully."
   },
   "tooltips": {
     "exportData": "Save all your shift planning data to a file for backup or transfer to another browser",
-    "importData": "Load planning data from a previously exported backup file"
+    "importData": "Load planning data from a previously exported backup file",
+    "clearData": "Delete all your data and start with a clean slate",
+    "loadDemo": "Load sample demonstration data to explore the application features"
   },
   "language": {
     "name": "English",

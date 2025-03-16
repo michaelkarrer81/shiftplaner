@@ -14,7 +14,9 @@
     "skills": "Fähigkeiten",
     "dataManagement": "Datenverwaltung",
     "exportData": "Daten-Backup exportieren",
-    "importData": "Daten-Backup importieren"
+    "importData": "Daten-Backup importieren",
+    "clearData": "Alle Daten löschen",
+    "loadDemo": "Demodaten laden"
   },
   "schedule": {
     "weekLabel": "Woche",
@@ -123,11 +125,16 @@
     "applyingData": "Wende importierte Daten an...",
     "confirmImport": "Dies wird Ihre aktuellen Daten ersetzen. Fortfahren?",
     "invalidData": "Ungültiges Datenformat in der Importdatei.",
-    "importCanceled": "Import abgebrochen."
+    "importCanceled": "Import abgebrochen.",
+    "clearDataConfirm": "Dies wird alle Ihre Planungsdaten löschen. Diese Aktion kann nicht rückgängig gemacht werden. Sind Sie sicher?",
+    "dataCleared": "Alle Daten wurden erfolgreich gelöscht.",
+    "demoDataLoaded": "Demodaten wurden erfolgreich geladen."
   },
   "tooltips": {
     "exportData": "Speichern Sie alle Ihre Schichtplanungsdaten in einer Datei zur Sicherung oder Übertragung auf einen anderen Browser",
-    "importData": "Laden Sie Planungsdaten aus einer zuvor exportierten Sicherungsdatei"
+    "importData": "Laden Sie Planungsdaten aus einer zuvor exportierten Sicherungsdatei",
+    "clearData": "Löschen Sie alle Ihre Daten und beginnen Sie mit einer leeren Anwendung",
+    "loadDemo": "Laden Sie Beispieldaten, um die Funktionen der Anwendung zu erkunden"
   },
   "language": {
     "name": "Deutsch",
