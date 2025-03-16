@@ -796,7 +796,8 @@ function generateWeekOptions() {
         const startFormatted = formatDate(startDate);
         const endFormatted = formatDate(endDate);
         
-        option.textContent = `Week ${index + 1}: ${startFormatted} - ${endFormatted}`;
+        // Use translation for "Week" label
+        option.textContent = `${t('schedule.weekLabel')} ${index + 1}: ${startFormatted} - ${endFormatted}`;
         
         // Add lock icon if week is locked
         if (isWeekLocked(index)) {
@@ -815,14 +816,23 @@ function generateWeekOptions() {
         
         elements.weekSelector.appendChild(option);
     });
+    
+    // Update the week label after generating options
+    updateWeekLabel(appData.currentWeek);
 }
 
-// Format date as DD/MM/YYYY
+// Format date based on current language (DD/MM/YYYY for English, DD.MM.YYYY for German)
 function formatDate(date) {
-    return `${date.getDate().toString().padStart(2, '0')}/${(date.getMonth() + 1).toString().padStart(2, '0')}/${date.getFullYear()}`;
+    if (currentLanguage === 'de') {
+        // German format: DD.MM.YYYY
+        return `${date.getDate().toString().padStart(2, '0')}.${(date.getMonth() + 1).toString().padStart(2, '0')}.${date.getFullYear()}`;
+    } else {
+        // Default/English format: DD/MM/YYYY
+        return `${date.getDate().toString().padStart(2, '0')}/${(date.getMonth() + 1).toString().padStart(2, '0')}/${date.getFullYear()}`;
+    }
 }
 
-// Format date as YYYY-MM-DD
+// Format date as YYYY-MM-DD (ISO format, used for input[type=date] values)
 function formatDateISO(date) {
     return `${date.getFullYear()}-${(date.getMonth() + 1).toString().padStart(2, '0')}-${date.getDate().toString().padStart(2, '0')}`;
 }
@@ -960,33 +970,34 @@ function openPlanGenerationModal() {
         <div class="modal-dialog">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title">Generate Plan for Date Range</h5>
+                    <h5 class="modal-title">${t('modals.planGeneration.title')}</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body">
                     <form id="plan-form">
                         <div class="mb-3">
-                            <label for="start-date" class="form-label">Start Date</label>
+                            <label for="start-date" class="form-label">${t('modals.planGeneration.startDate')}</label>
                             <input type="date" class="form-control" id="start-date" value="${startDateValue}" required>
                         </div>
                         <div class="mb-3">
-                            <label for="end-date" class="form-label">End Date</label>
+                            <label for="end-date" class="form-label">${t('modals.planGeneration.endDate')}</label>
                             <input type="date" class="form-control" id="end-date" value="${endDateValue}" required>
                         </div>
                         <div class="mb-3 form-check">
                             <input type="checkbox" class="form-check-input" id="create-versions" checked>
-                            <label class="form-check-label" for="create-versions">Create new versions for existing weeks</label>
+                            <label class="form-check-label" for="create-versions">${t('modals.planGeneration.createVersions')}</label>
                         </div>
                         <div class="mb-3">
                             <p class="text-info">
-                                <i class="bi bi-info-circle"></i> Locked weeks will not be modified.
+                                <i class="bi bi-info-circle"></i> 
+                                ${currentLanguage === 'de' ? 'Gesperrte Wochen werden nicht verändert.' : 'Locked weeks will not be modified.'}
                             </p>
                         </div>
                     </form>
                 </div>
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                    <button type="button" class="btn btn-primary" id="generate-plan-btn">Generate Plan</button>
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">${t('modals.buttons.cancel')}</button>
+                    <button type="button" class="btn btn-primary" id="generate-plan-btn">${t('modals.buttons.generate')}</button>
                 </div>
             </div>
         </div>
@@ -1006,7 +1017,9 @@ function openPlanGenerationModal() {
         
         // Validate dates
         if (endDate < startDate) {
-            alert('End date cannot be before start date');
+            alert(currentLanguage === 'de' ? 
+                  'Das Enddatum kann nicht vor dem Startdatum liegen' : 
+                  'End date cannot be before start date');
             return;
         }
         
@@ -1133,7 +1146,14 @@ function generatePlanForDateRange(startDate, endDate, createVersions) {
     renderSchedule();
     saveData();
     
-    alert(`Plan generated successfully for ${formatDate(startDate)} - ${formatDate(endDate)}.\n${existingWeekIndices.length} existing unlocked weeks were replanned.`);
+    // Show localized success message
+    let successMessage = '';
+    if (currentLanguage === 'de') {
+        successMessage = `Plan erfolgreich erstellt für ${formatDate(startDate)} - ${formatDate(endDate)}.\n${existingWeekIndices.length} existierende entsperrte Wochen wurden neu geplant.`;
+    } else {
+        successMessage = `Plan generated successfully for ${formatDate(startDate)} - ${formatDate(endDate)}.\n${existingWeekIndices.length} existing unlocked weeks were replanned.`;
+    }
+    alert(successMessage);
 }
 
 // Create a new version for a specific week
@@ -2276,15 +2296,22 @@ function exportToExcel() {
         // 3. Create Data Records Sheet
         createDataRecordsSheet(workbook, weekIndex, colors);
         
-        // Create filename with week number and date
-        const currentDate = new Date();
-        const fileName = `ShiftPlanner_Week${weekNumber}_${currentDate.getFullYear()}-${(currentDate.getMonth() + 1).toString().padStart(2, '0')}-${currentDate.getDate().toString().padStart(2, '0')}.xlsx`;
+        // Generate filename
+        const formattedDate = formatDateForFilename(new Date());
+        const filename = currentLanguage === 'de' 
+            ? `Schichtplaner_Export_${formattedDate}.xlsx`
+            : `ShiftPlanner_Export_${formattedDate}.xlsx`;
         
-        // Generate and save Excel file
+        // Generate the Excel file and trigger download
         workbook.xlsx.writeBuffer().then(buffer => {
             const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
-            saveAs(blob, fileName);
-            showProgressIndicator('Excel export completed successfully!');
+            saveAs(blob, filename);
+            
+            // Show success message
+            const successMsg = currentLanguage === 'de' 
+                ? "Excel-Export erfolgreich!"
+                : "Excel export successful!";
+            showProgressIndicator(successMsg, 2000);
         });
     } catch (error) {
         console.error('Error during Excel export:', error);
@@ -2892,14 +2919,33 @@ function showFeatureInfo() {
         return;
     }
     
+    // Create message with appropriate language
+    let featureTitle, featureParagraph, versionControlLabel, scheduleLockingLabel, lookForLabel, gotItButton;
+    
+    if (currentLanguage === 'de') {
+        featureTitle = "Neue Funktionen hinzugefügt!";
+        featureParagraph = "Wir haben zwei neue leistungsstarke Funktionen hinzugefügt, die Ihnen bei der Schichtplanung helfen:";
+        versionControlLabel = "Versionskontrolle - Erstellen und wechseln Sie zwischen verschiedenen Versionen Ihres Wochenplans";
+        scheduleLockingLabel = "Zeitplansperre - Sperren Sie den Zeitplan einer Woche, um weitere Änderungen zu verhindern";
+        lookForLabel = "Suchen Sie nach den neuen Versionskontrollen unter der Wochenauswahl und der Sperren/Entsperren-Schaltfläche oben rechts.";
+        gotItButton = "Verstanden!";
+    } else {
+        featureTitle = "New Features Added!";
+        featureParagraph = "We've added two new powerful features to help with your shift planning:";
+        versionControlLabel = "Version Control - Create and switch between different versions of your weekly schedule";
+        scheduleLockingLabel = "Schedule Locking - Lock a week's schedule to prevent further changes";
+        lookForLabel = "Look for the new version controls below the week selector and the lock/unlock button in the top right.";
+        gotItButton = "Got it!";
+    }
+    
     const message = `
-        <h5>New Features Added!</h5>
-        <p>We've added two new powerful features to help with your shift planning:</p>
+        <h5>${featureTitle}</h5>
+        <p>${featureParagraph}</p>
         <ul>
-            <li><strong>Version Control</strong> - Create and switch between different versions of your weekly schedule</li>
-            <li><strong>Schedule Locking</strong> - Lock a week's schedule to prevent further changes</li>
+            <li><strong>${versionControlLabel}</strong></li>
+            <li><strong>${scheduleLockingLabel}</strong></li>
         </ul>
-        <p>Look for the new version controls below the week selector and the lock/unlock button in the top right.</p>
+        <p>${lookForLabel}</p>
     `;
     
     // Create info modal dynamically
@@ -2911,14 +2957,14 @@ function showFeatureInfo() {
         <div class="modal-dialog">
             <div class="modal-content">
                 <div class="modal-header bg-info text-white">
-                    <h5 class="modal-title">New Features</h5>
+                    <h5 class="modal-title">${featureTitle}</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body">
                     ${message}
                 </div>
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-primary" data-bs-dismiss="modal">Got it!</button>
+                    <button type="button" class="btn btn-primary" data-bs-dismiss="modal">${gotItButton}</button>
                 </div>
             </div>
         </div>
@@ -3138,5 +3184,64 @@ function updateWeekLabel(weekIndex) {
     weekLabelWrapper.innerHTML = `<label class="me-2" style="margin-bottom: 0;"><strong>Week ${weekNumber}:</strong></label>`;
 }
 
+// Format date for filename
+function formatDateForFilename(date) {
+    const year = date.getFullYear();
+    const month = (date.getMonth() + 1).toString().padStart(2, '0');
+    const day = date.getDate().toString().padStart(2, '0');
+    return `${year}-${month}-${day}`;
+}
+
+// Convert column index to Excel column letter
+function getExcelColumn(colIndex) {
+    let temp, letter = '';
+    while (colIndex > 0) {
+        temp = (colIndex - 1) % 26;
+        letter = String.fromCharCode(temp + 65) + letter;
+        colIndex = (colIndex - temp - 1) / 26;
+    }
+    return letter;
+}
+
+// Apply borders to Excel cell
+function applyBordersToCell(cell) {
+    cell.border = {
+        top: { style: 'thin', color: { argb: 'BFBFBF' } },
+        left: { style: 'thin', color: { argb: 'BFBFBF' } },
+        bottom: { style: 'thin', color: { argb: 'BFBFBF' } },
+        right: { style: 'thin', color: { argb: 'BFBFBF' } }
+    };
+}
+
 // Initialize the application when the DOM is loaded
 document.addEventListener('DOMContentLoaded', init); 
+
+// Get team name with language support
+function getTeamName(teamId) {
+    if (!teamId) {
+        return currentLanguage === 'de' ? '(Kein Team)' : '(No Team)';
+    }
+    
+    const team = teams.find(t => t.id === teamId);
+    return team ? team.name : (currentLanguage === 'de' ? 'Unbekanntes Team' : 'Unknown Team');
+}
+
+// Get team skills
+function getTeamSkills(team) {
+    const teamSkills = new Set();
+    
+    team.employees.forEach(empId => {
+        const emp = employees.find(e => e.id === empId);
+        if (emp && emp.skills) {
+            emp.skills.forEach(skillId => {
+                teamSkills.add(skillId);
+            });
+        }
+    });
+    
+    // Return array of skill names
+    return Array.from(teamSkills).map(skillId => {
+        const skill = skills.find(s => s.id === skillId);
+        return skill ? skill.name : skillId;
+    });
+}
