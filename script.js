@@ -1,3 +1,169 @@
+// Global variables
+let employees = [];
+let skills = [];
+let schedule = [];
+let currentView = 'schedule'; // Default view
+let translations = {}; // Store loaded translations
+let currentLanguage = 'en'; // Default language
+
+// i18n functions
+async function loadLanguage(lang) {
+    try {
+        const response = await fetch(`lang/${lang}.json`);
+        if (!response.ok) {
+            throw new Error(`Failed to load language file for ${lang}`);
+        }
+        
+        translations = await response.json();
+        currentLanguage = lang;
+        localStorage.setItem('preferredLanguage', lang);
+        
+        // Update all UI text with new language
+        updateUILanguage();
+        
+        return true;
+    } catch (error) {
+        console.error('Error loading language file:', error);
+        return false;
+    }
+}
+
+function switchLanguage(lang) {
+    if (lang === currentLanguage) return;
+    
+    loadLanguage(lang).then(success => {
+        if (success) {
+            console.log(`Switched to ${lang} language`);
+        } else {
+            console.error(`Failed to switch to ${lang} language`);
+        }
+    });
+}
+
+function t(key) {
+    // Split the key path by dots to navigate through nested objects
+    const keys = key.split('.');
+    let result = translations;
+    
+    // Traverse the translations object
+    for (const k of keys) {
+        if (result && result[k] !== undefined) {
+            result = result[k];
+        } else {
+            // If translation not found, return the key itself
+            console.warn(`Translation missing for key: ${key}`);
+            return key;
+        }
+    }
+    
+    return result;
+}
+
+function updateUILanguage() {
+    // Update document title
+    document.title = t('app.title');
+    
+    // Update navbar
+    document.querySelector('.navbar-brand').textContent = t('app.title');
+    document.getElementById('nav-schedule').textContent = t('nav.schedule');
+    document.getElementById('nav-employees').textContent = t('nav.employees');
+    document.getElementById('nav-teams').textContent = t('nav.teams');
+    document.getElementById('nav-skills').textContent = t('nav.skills');
+    
+    // Update language dropdown
+    document.getElementById('language-dropdown').textContent = t('language.select');
+    
+    // Update data management dropdown
+    document.getElementById('data-dropdown').textContent = t('nav.dataManagement');
+    document.getElementById('export-data-button').textContent = t('nav.exportData');
+    document.getElementById('import-data-button').textContent = t('nav.importData');
+    
+    // Update loading text
+    document.querySelector('.spinner-border .visually-hidden').textContent = t('app.loading');
+    
+    // Update error container
+    document.querySelector('#error-container h4').textContent = t('app.error.title');
+    
+    // Update tooltips
+    document.getElementById('export-data-button').title = t('tooltips.exportData');
+    document.getElementById('import-data-button').title = t('tooltips.importData');
+    
+    // Update the current view based on which view is active
+    if (currentView === 'schedule') updateScheduleView();
+    else if (currentView === 'employees') updateEmployeesView();
+    else if (currentView === 'teams') updateTeamsView();
+    else if (currentView === 'skills') updateSkillsView();
+}
+
+function updateScheduleView() {
+    // Update schedule view labels
+    document.querySelector('label[for="week-selector"]').textContent = t('schedule.selectWeek');
+    document.getElementById('export-button').textContent = t('schedule.exportToExcel');
+    document.getElementById('plan-button').textContent = t('schedule.generatePlan');
+    
+    // Update table headers
+    const scheduleHeaders = document.querySelectorAll('#schedule-table thead th');
+    if (scheduleHeaders.length >= 4) {
+        scheduleHeaders[0].textContent = t('schedule.day');
+        scheduleHeaders[1].textContent = t('schedule.amShift');
+        scheduleHeaders[2].textContent = t('schedule.pmShift');
+        scheduleHeaders[3].textContent = t('schedule.nightShift');
+    }
+    
+    // Re-render schedule to update all cells with new language
+    renderSchedule();
+}
+
+function updateEmployeesView() {
+    // Update employees view labels
+    document.querySelector('#employees-view .card-header h5').textContent = t('employees.title');
+    document.getElementById('add-employee-button').textContent = t('employees.addEmployee');
+    
+    // Update table headers
+    const employeeHeaders = document.querySelectorAll('#employees-table thead th');
+    if (employeeHeaders.length >= 5) {
+        employeeHeaders[0].textContent = t('employees.name');
+        employeeHeaders[1].textContent = t('employees.team');
+        employeeHeaders[2].textContent = t('employees.skills');
+        employeeHeaders[3].textContent = t('employees.absentDates');
+        employeeHeaders[4].textContent = t('employees.actions');
+    }
+    
+    // Re-render employees to update all with new language
+    renderEmployees();
+}
+
+function updateTeamsView() {
+    // Update team headers
+    const teamHeaders = document.querySelectorAll('.team-header');
+    if (teamHeaders.length >= 3) {
+        teamHeaders[0].textContent = t('teams.teamA');
+        teamHeaders[1].textContent = t('teams.teamB');
+        teamHeaders[2].textContent = t('teams.teamC');
+    }
+    
+    // Re-render teams with new language
+    renderTeams();
+}
+
+function updateSkillsView() {
+    // Update skills view labels
+    document.querySelector('#skills-view .card-header h5').textContent = t('skills.title');
+    document.getElementById('add-skill-button').textContent = t('skills.addSkill');
+    
+    // Update table headers
+    const skillHeaders = document.querySelectorAll('#skills-table thead th');
+    if (skillHeaders.length >= 4) {
+        skillHeaders[0].textContent = t('skills.skillName');
+        skillHeaders[1].textContent = t('skills.description');
+        skillHeaders[2].textContent = t('skills.employeesWithSkill');
+        skillHeaders[3].textContent = t('skills.actions');
+    }
+    
+    // Re-render skills with new language
+    renderSkills();
+}
+
 // Initialize the application data
 let appData = {
     employees: [],
@@ -154,20 +320,48 @@ function initAfterDOM() {
             return; // Exit if modal initialization fails
         }
         
-        // Initialize application data and UI
+        // Initialize application data
         loadData();
-        setupEventListeners();
-        setupNavigation();
-        generateWeekOptions();
-        renderSchedule();
-        renderEmployees();
-        renderTeams();
-        renderSkills();
         
-        // Add information about new versioning and locking features
-        showFeatureInfo();
-        
-        console.log('Application initialized successfully');
+        // Load preferred language or default to English
+        const preferredLanguage = localStorage.getItem('preferredLanguage') || 'en';
+        loadLanguage(preferredLanguage).then(() => {
+            // Initialize the rest of the UI after language is loaded
+            setupEventListeners();
+            setupNavigation();
+            generateWeekOptions();
+            renderSchedule();
+            renderEmployees();
+            renderTeams();
+            renderSkills();
+            
+            // Add information about new features
+            showFeatureInfo();
+            
+            // Hide loading indicator (if it's still showing)
+            const loadingIndicator = document.getElementById('loading-indicator');
+            if (loadingIndicator) {
+                loadingIndicator.classList.add('d-none');
+            }
+            
+            console.log('Application initialized successfully with language:', currentLanguage);
+        }).catch(err => {
+            console.error('Error loading language:', err);
+            
+            // If language loading fails, continue with default text
+            setupEventListeners();
+            setupNavigation();
+            generateWeekOptions();
+            renderSchedule();
+            renderEmployees();
+            renderTeams();
+            renderSkills();
+            
+            // Add information about new features
+            showFeatureInfo();
+            
+            console.log('Application initialized with default language due to error');
+        });
     } catch (error) {
         console.error('Error initializing application:', error);
         showError('Error initializing application: ' + error.message);
@@ -463,20 +657,47 @@ function openImportDialog() {
 // Set up event listeners
 function setupEventListeners() {
     // Navigation
-    elements.navSchedule.addEventListener('click', () => switchView('schedule'));
-    elements.navEmployees.addEventListener('click', () => switchView('employees'));
-    elements.navTeams.addEventListener('click', () => switchView('teams'));
-    elements.navSkills.addEventListener('click', () => switchView('skills'));
+    elements.navSchedule.addEventListener('click', (e) => {
+        e.preventDefault();
+        switchView('schedule');
+    });
+    
+    elements.navEmployees.addEventListener('click', (e) => {
+        e.preventDefault();
+        switchView('employees');
+    });
+    
+    elements.navTeams.addEventListener('click', (e) => {
+        e.preventDefault();
+        switchView('teams');
+    });
+    
+    elements.navSkills.addEventListener('click', (e) => {
+        e.preventDefault();
+        switchView('skills');
+    });
+    
+    // Language switcher
+    document.getElementById('lang-en').addEventListener('click', (e) => {
+        e.preventDefault();
+        switchLanguage('en');
+    });
+    
+    document.getElementById('lang-de').addEventListener('click', (e) => {
+        e.preventDefault();
+        switchLanguage('de');
+    });
     
     // Schedule
     elements.weekSelector.addEventListener('change', handleWeekChange);
     elements.planButton.addEventListener('click', handlePlanGeneration);
     elements.exportButton.addEventListener('click', exportToExcel);
     
-    // Data management buttons
+    // Data Management
     if (elements.exportDataButton) {
         elements.exportDataButton.addEventListener('click', exportData);
     }
+    
     if (elements.importDataButton) {
         elements.importDataButton.addEventListener('click', openImportDialog);
     }

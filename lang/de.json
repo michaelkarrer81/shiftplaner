@@ -1,0 +1,120 @@
+{
+  "app": {
+    "title": "Schichtplaner",
+    "loading": "Wird geladen...",
+    "error": {
+      "title": "Ein Fehler ist aufgetreten",
+      "message": "Fehlermeldung"
+    }
+  },
+  "nav": {
+    "schedule": "Zeitplan",
+    "employees": "Mitarbeiter",
+    "teams": "Teams",
+    "skills": "Fähigkeiten",
+    "dataManagement": "Datenverwaltung",
+    "exportData": "Daten-Backup exportieren",
+    "importData": "Daten-Backup importieren"
+  },
+  "schedule": {
+    "weekLabel": "Woche",
+    "selectWeek": "Woche auswählen",
+    "exportToExcel": "Nach Excel exportieren",
+    "generatePlan": "Neuen Plan erstellen",
+    "day": "Tag",
+    "amShift": "Frühschicht",
+    "pmShift": "Spätschicht",
+    "nightShift": "Nachtschicht",
+    "version": "Version",
+    "status": {
+      "locked": "Gesperrt",
+      "editable": "Bearbeitbar"
+    }
+  },
+  "employees": {
+    "title": "Mitarbeiter",
+    "addEmployee": "Mitarbeiter hinzufügen",
+    "name": "Name",
+    "team": "Team",
+    "skills": "Fähigkeiten",
+    "absentDates": "Abwesenheitsdaten",
+    "actions": "Aktionen"
+  },
+  "teams": {
+    "teamA": "Team A",
+    "teamB": "Team B",
+    "teamC": "Team C",
+    "info": {
+      "rotations": "Teams arbeiten in unterschiedlichen Schichtrotationen:",
+      "teamA": "Team A arbeitet in geraden Wochen Frühschicht, in ungeraden Wochen Spätschicht",
+      "teamB": "Team B arbeitet in geraden Wochen Spätschicht, in ungeraden Wochen Frühschicht",
+      "teamC": "Team C arbeitet durchgehend in der Nachtschicht"
+    }
+  },
+  "skills": {
+    "title": "Fähigkeitsverwaltung",
+    "addSkill": "Neue Fähigkeit hinzufügen",
+    "skillName": "Fähigkeitsname",
+    "description": "Beschreibung",
+    "employeesWithSkill": "Mitarbeiter mit Fähigkeit"
+  },
+  "modals": {
+    "employee": {
+      "title": "Mitarbeiterdetails",
+      "nameLabel": "Name",
+      "teamLabel": "Team",
+      "skillsLabel": "Fähigkeiten",
+      "skillsHelp": "Halten Sie Strg (oder Cmd auf Mac) gedrückt, um mehrere Fähigkeiten auszuwählen",
+      "absentDatesLabel": "Abwesenheitsdaten",
+      "addDate": "Abwesenheitsdatum hinzufügen"
+    },
+    "shift": {
+      "title": "Mitarbeiter der Schicht zuweisen",
+      "infoLabel": "Schichtinformationen",
+      "employeesHelp": "Halten Sie Strg (oder Cmd auf Mac) gedrückt, um mehrere Mitarbeiter auszuwählen"
+    },
+    "skill": {
+      "title": "Fähigkeitsdetails",
+      "nameLabel": "Fähigkeitsname",
+      "descriptionLabel": "Beschreibung"
+    },
+    "planGeneration": {
+      "title": "Plan generieren",
+      "dateRangeLabel": "Datumsbereich auswählen",
+      "startDate": "Startdatum",
+      "endDate": "Enddatum",
+      "createVersions": "Versionen für bestehende Wochen erstellen"
+    },
+    "buttons": {
+      "cancel": "Abbrechen",
+      "save": "Speichern",
+      "close": "Schließen",
+      "generate": "Generieren"
+    }
+  },
+  "common": {
+    "edit": "Bearbeiten",
+    "delete": "Löschen",
+    "confirm": "Bestätigen",
+    "cancel": "Abbrechen"
+  },
+  "notifications": {
+    "importSuccess": "Daten erfolgreich importiert!",
+    "exportSuccess": "Daten erfolgreich exportiert!",
+    "preparingExport": "Bereite Daten für Export vor...",
+    "readingFile": "Lese Datei...",
+    "validatingData": "Überprüfe Daten...",
+    "applyingData": "Wende importierte Daten an...",
+    "confirmImport": "Dies wird Ihre aktuellen Daten ersetzen. Fortfahren?",
+    "invalidData": "Ungültiges Datenformat in der Importdatei.",
+    "importCanceled": "Import abgebrochen."
+  },
+  "tooltips": {
+    "exportData": "Speichern Sie alle Ihre Schichtplanungsdaten in einer Datei zur Sicherung oder Übertragung auf einen anderen Browser",
+    "importData": "Laden Sie Planungsdaten aus einer zuvor exportierten Sicherungsdatei"
+  },
+  "language": {
+    "name": "Deutsch",
+    "select": "Sprache"
+  }
+} 

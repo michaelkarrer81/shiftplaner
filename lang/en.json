@@ -1,0 +1,120 @@
+{
+  "app": {
+    "title": "Shift Planner",
+    "loading": "Loading...",
+    "error": {
+      "title": "An error occurred",
+      "message": "Error message"
+    }
+  },
+  "nav": {
+    "schedule": "Schedule",
+    "employees": "Employees",
+    "teams": "Teams",
+    "skills": "Skills",
+    "dataManagement": "Data Management",
+    "exportData": "Export Data Backup",
+    "importData": "Import Data Backup"
+  },
+  "schedule": {
+    "weekLabel": "Week",
+    "selectWeek": "Select Week",
+    "exportToExcel": "Export to Excel",
+    "generatePlan": "Generate New Plan",
+    "day": "Day",
+    "amShift": "AM Shift",
+    "pmShift": "PM Shift",
+    "nightShift": "Night Shift",
+    "version": "Version",
+    "status": {
+      "locked": "Locked",
+      "editable": "Editable"
+    }
+  },
+  "employees": {
+    "title": "Employees",
+    "addEmployee": "Add Employee",
+    "name": "Name",
+    "team": "Team",
+    "skills": "Skills",
+    "absentDates": "Absent Dates",
+    "actions": "Actions"
+  },
+  "teams": {
+    "teamA": "Team A",
+    "teamB": "Team B",
+    "teamC": "Team C",
+    "info": {
+      "rotations": "Teams work in different shift rotations:",
+      "teamA": "Team A works AM shifts in even weeks, PM shifts in odd weeks",
+      "teamB": "Team B works PM shifts in even weeks, AM shifts in odd weeks",
+      "teamC": "Team C consistently works Night shifts"
+    }
+  },
+  "skills": {
+    "title": "Skills Management",
+    "addSkill": "Add New Skill",
+    "skillName": "Skill Name",
+    "description": "Description",
+    "employeesWithSkill": "Employees with Skill"
+  },
+  "modals": {
+    "employee": {
+      "title": "Employee Details",
+      "nameLabel": "Name",
+      "teamLabel": "Team",
+      "skillsLabel": "Skills",
+      "skillsHelp": "Hold Ctrl (or Cmd on Mac) to select multiple skills",
+      "absentDatesLabel": "Absent Dates",
+      "addDate": "Add Absent Date"
+    },
+    "shift": {
+      "title": "Assign Employees to Shift",
+      "infoLabel": "Shift Information",
+      "employeesHelp": "Hold Ctrl (or Cmd on Mac) to select multiple employees"
+    },
+    "skill": {
+      "title": "Skill Details",
+      "nameLabel": "Skill Name",
+      "descriptionLabel": "Description"
+    },
+    "planGeneration": {
+      "title": "Generate Plan",
+      "dateRangeLabel": "Select Date Range",
+      "startDate": "Start Date",
+      "endDate": "End Date",
+      "createVersions": "Create versions for existing weeks"
+    },
+    "buttons": {
+      "cancel": "Cancel",
+      "save": "Save",
+      "close": "Close",
+      "generate": "Generate"
+    }
+  },
+  "common": {
+    "edit": "Edit",
+    "delete": "Delete",
+    "confirm": "Confirm",
+    "cancel": "Cancel"
+  },
+  "notifications": {
+    "importSuccess": "Data imported successfully!",
+    "exportSuccess": "Data exported successfully!",
+    "preparingExport": "Preparing data for export...",
+    "readingFile": "Reading file...",
+    "validatingData": "Validating data...",
+    "applyingData": "Applying imported data...",
+    "confirmImport": "This will replace your current data. Continue?",
+    "invalidData": "Invalid data format in import file.",
+    "importCanceled": "Import canceled."
+  },
+  "tooltips": {
+    "exportData": "Save all your shift planning data to a file for backup or transfer to another browser",
+    "importData": "Load planning data from a previously exported backup file"
+  },
+  "language": {
+    "name": "English",
+    "select": "Language"
+  }
+} 
