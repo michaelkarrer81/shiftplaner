@@ -1323,7 +1323,10 @@ function renderSchedule() {
     
     DAYS_OF_WEEK.forEach(day => {
         const daySchedule = weekSchedule[day] || {};
-        const row = document.createElement('tr');
+        
+        // Create the employees row
+        const employeeRow = document.createElement('tr');
+        employeeRow.classList.add('employee-skills-row');
         
         // Day column
         const dayCell = document.createElement('td');
@@ -1332,33 +1335,13 @@ function renderSchedule() {
             const date = new Date(daySchedule.date);
             dayCell.textContent += ` (${formatDate(date)})`;
         }
+        employeeRow.appendChild(dayCell);
         
-        // Add skill summary for the day
-        const daySkillSummary = generateDailySkillSummary(weekIndex, day);
-        if (daySkillSummary.length > 0) {
-            const skillsContainer = document.createElement('div');
-            skillsContainer.classList.add('mt-2', 'small', 'skills-summary');
-            
-            const skillsLabel = document.createElement('strong');
-            skillsLabel.textContent = currentLanguage === 'de' ? 'Verfügbare Fähigkeiten heute: ' : 'Skills available today: ';
-            skillsContainer.appendChild(skillsLabel);
-            
-            daySkillSummary.forEach(skill => {
-                const skillBadge = document.createElement('span');
-                skillBadge.classList.add('badge', 'bg-success', 'me-1');
-                skillBadge.textContent = skill.name;
-                skillBadge.title = currentLanguage === 'de' 
-                    ? `${skill.count} Mitarbeiter mit dieser Fähigkeit verfügbar` 
-                    : `${skill.count} employees with this skill available`;
-                skillsContainer.appendChild(skillBadge);
-            });
-            
-            dayCell.appendChild(skillsContainer);
-        }
+        // Get date for this day
+        const dayIndex = DAYS_OF_WEEK.indexOf(day);
+        const dateStr = appData.weekDates[weekIndex][dayIndex];
         
-        row.appendChild(dayCell);
-        
-        // Shift columns
+        // Create cells for each shift type (employees)
         SHIFT_TYPES.forEach(shiftType => {
             const shiftCell = document.createElement('td');
             shiftCell.classList.add('schedule-cell');
@@ -1374,13 +1357,6 @@ function renderSchedule() {
             teamBadge.classList.add('team-badge', `team-${shift.team.toLowerCase()}-badge`);
             teamBadge.textContent = `Team ${shift.team}`;
             shiftCell.appendChild(teamBadge);
-            
-            // Add employee names
-            const employeesList = document.createElement('div');
-            
-            // Get date for this day
-            const dayIndex = DAYS_OF_WEEK.indexOf(day);
-            const dateStr = appData.weekDates[weekIndex][dayIndex];
             
             if (shift.employees && shift.employees.length > 0) {
                 // Check if there are employees from other teams
@@ -1398,77 +1374,68 @@ function renderSchedule() {
                     teamBadge.after(mixedTeamBadge);
                 }
                 
-                // Add employee names with their team indicator
+                // Group employees by team
+                const employeesByTeam = {};
+                const absentEmployees = [];
+                
+                // Process all employees
                 shift.employees.forEach(employeeId => {
                     const employee = appData.employees.find(e => e.id === employeeId);
-                    if (employee) {
-                        const employeeSpan = document.createElement('div');
+                    if (!employee) return;
+                    
                         const isAbsent = employee.absentDates.includes(dateStr);
                         
-                        // Apply strikethrough if employee is absent
+                    // Handle absent employees separately
                         if (isAbsent) {
-                            employeeSpan.innerHTML = `<s>${employee.name}</s> <span class="badge bg-danger">Absent</span>`;
-                            employeeSpan.classList.add('text-danger');
-                        } else {
-                            employeeSpan.textContent = employee.name;
-                            
-                            // Add team indicator if employee is from a different team
-                            if (employee.team !== shift.team) {
-                                employeeSpan.innerHTML += ` <small class="text-muted">(Team ${employee.team})</small>`;
-                                employeeSpan.classList.add('text-primary');
-                            }
-                            
-                            // Add skills badges if employee has skills
-                            if (employee.skills && employee.skills.length > 0) {
-                                const skillsSpan = document.createElement('div');
-                                skillsSpan.classList.add('employee-skills', 'small');
-                                
-                                employee.skills.forEach(skillId => {
-                                    const skill = appData.skills.find(s => s.id === skillId);
-                                    if (skill) {
-                                        const badge = document.createElement('span');
-                                        badge.classList.add('badge', 'bg-info', 'me-1');
-                                        badge.textContent = skill.name;
-                                        badge.title = skill.description;
-                                        skillsSpan.appendChild(badge);
-                                    }
-                                });
-                                
-                                employeeSpan.appendChild(skillsSpan);
-                            }
-                        }
-                        
-                        employeesList.appendChild(employeeSpan);
+                        absentEmployees.push(employee);
+                        return;
                     }
+                    
+                    // Group by team
+                    if (!employeesByTeam[employee.team]) {
+                        employeesByTeam[employee.team] = [];
+                    }
+                    employeesByTeam[employee.team].push(employee);
                 });
                 
-                // Add skill summary for this shift
-                const shiftSkills = getShiftSkills(shift.employees, dateStr);
-                if (shiftSkills.length > 0) {
-                    const skillsDiv = document.createElement('div');
-                    skillsDiv.classList.add('mt-2', 'shift-skills-summary', 'small');
+                // Create container for all employee data
+                const employeesList = document.createElement('div');
+                employeesList.classList.add('mt-2');
+                
+                // Add a line for each team's employees
+                Object.keys(employeesByTeam).sort().forEach(teamId => {
+                    const teamEmployees = employeesByTeam[teamId];
+                    const employeeNames = teamEmployees.map(emp => emp.name);
                     
-                    const skillsLabel = document.createElement('strong');
-                    skillsLabel.textContent = currentLanguage === 'de' ? 'Fähigkeiten: ' : 'Skills: ';
-                    skillsDiv.appendChild(skillsLabel);
+                    const teamLine = document.createElement('div');
+                    if (teamId !== shift.team) {
+                        teamLine.classList.add('text-primary');
+                        teamLine.innerHTML = `${employeeNames.join(', ')} <small class="text-muted">(Team ${teamId})</small>`;
+                    } else {
+                        teamLine.textContent = employeeNames.join(', ');
+                    }
                     
-                    shiftSkills.forEach(skillId => {
-                        const skill = appData.skills.find(s => s.id === skillId);
-                        if (skill) {
-                            const badge = document.createElement('span');
-                            badge.classList.add('badge', 'bg-success', 'me-1');
-                            badge.textContent = skill.name;
-                            skillsDiv.appendChild(badge);
-                        }
-                    });
+                    employeesList.appendChild(teamLine);
+                });
+                
+                // Add absent employees (each on their own line)
+                if (absentEmployees.length > 0) {
+                    const absentLine = document.createElement('div');
+                    absentLine.classList.add('text-danger', 'mt-1');
                     
-                    employeesList.appendChild(skillsDiv);
+                    const absentNames = absentEmployees.map(emp => ` ${emp.name} `);
+                    absentLine.innerHTML = `${absentNames.join(', ')} <span class="badge bg-danger">Absent</span>`;
+                    
+                    employeesList.appendChild(absentLine);
                 }
+                
+                shiftCell.appendChild(employeesList);
             } else {
-                employeesList.textContent = currentLanguage === 'de' ? 'Keine Mitarbeiter zugewiesen' : 'No employees assigned';
+                const emptyMessage = document.createElement('div');
+                emptyMessage.classList.add('mt-2');
+                emptyMessage.textContent = currentLanguage === 'de' ? 'Keine Mitarbeiter zugewiesen' : 'No employees assigned';
+                shiftCell.appendChild(emptyMessage);
             }
-            
-            shiftCell.appendChild(employeesList);
             
             // Add click event to edit shift only if week is not locked
             if (!isLocked) {
@@ -1482,10 +1449,83 @@ function renderSchedule() {
                 shiftCell.classList.add('disabled-cell');
             }
             
-            row.appendChild(shiftCell);
+            employeeRow.appendChild(shiftCell);
         });
         
-        tbody.appendChild(row);
+        tbody.appendChild(employeeRow);
+        
+        // Create a separate row for skills
+        const skillsRow = document.createElement('tr');
+        skillsRow.classList.add('skills-row');
+        skillsRow.style.borderTop = "none";
+        
+        // Empty cell for day column in skills row
+        const emptyCellForSkills = document.createElement('td');
+        emptyCellForSkills.style.borderTop = "none";
+        emptyCellForSkills.style.paddingTop = "0";
+        
+        // Add daily skill summary to the first column
+        const daySkillSummary = generateDailySkillSummary(weekIndex, day);
+        if (daySkillSummary.length > 0) {
+            const skillsDiv = document.createElement('div');
+            skillsDiv.classList.add('shift-skills-summary');
+            skillsDiv.style.position = "static";
+            skillsDiv.style.width = "100%";
+            skillsDiv.style.margin = "0";
+            skillsDiv.style.borderTop = "none";
+            
+            daySkillSummary.forEach(skill => {
+                const badge = document.createElement('span');
+                badge.classList.add('badge');
+                badge.textContent = skill.name;
+                badge.title = currentLanguage === 'de' 
+                    ? `${skill.count} Mitarbeiter mit dieser Fähigkeit verfügbar` 
+                    : `${skill.count} employees with this skill available`;
+                skillsDiv.appendChild(badge);
+            });
+            
+            emptyCellForSkills.appendChild(skillsDiv);
+        }
+        
+        skillsRow.appendChild(emptyCellForSkills);
+        
+        // Add skill cells for each shift type
+        SHIFT_TYPES.forEach(shiftType => {
+            const shift = daySchedule[shiftType] || { employees: [] };
+            
+            const skillsCell = document.createElement('td');
+            skillsCell.style.borderTop = "none";
+            skillsCell.style.paddingTop = "0";
+            
+            // Get the skills for this shift
+            const shiftSkillIds = getShiftSkills(shift.employees, dateStr);
+            
+            if (shiftSkillIds.length > 0) {
+                const skillsDiv = document.createElement('div');
+                skillsDiv.classList.add('shift-skills-summary');
+                skillsDiv.style.position = "static";
+                skillsDiv.style.width = "100%";
+                skillsDiv.style.margin = "0";
+                skillsDiv.style.borderTop = "none";
+                
+                shiftSkillIds.forEach(skillId => {
+                    const skill = appData.skills.find(s => s.id === skillId);
+                    if (skill) {
+                        const badge = document.createElement('span');
+                        badge.classList.add('badge');
+                        badge.textContent = skill.name;
+                        badge.title = skill.description;
+                        skillsDiv.appendChild(badge);
+                    }
+                });
+                
+                skillsCell.appendChild(skillsDiv);
+            }
+            
+            skillsRow.appendChild(skillsCell);
+        });
+        
+        tbody.appendChild(skillsRow);
     });
 }
 
@@ -2156,7 +2196,7 @@ function openShiftEditModal(day, shiftType, shift) {
         // Check if employee is absent
         if (isAbsent) {
             // Apply strikethrough styling for absent employees
-            option.innerHTML = `<s>${option.textContent} (ABSENT)</s>`;
+            option.innerHTML = ` ${option.textContent} (ABSENT) `;
             option.disabled = true;
             option.classList.add('text-danger', 'absent-employee');
             

@@ -40,6 +40,8 @@ body {
 .schedule-cell {
     cursor: pointer;
     transition: background-color 0.2s;
+    position: relative;
+    padding-bottom: 8px !important;
 }
 
 .schedule-cell:hover {
@@ -56,6 +58,60 @@ body {
 /* Make small text in employee spans (like team indicators) even smaller */
 .schedule-cell div small {
     font-size: 85%;
+}
+
+/* Style for team members displayed on same line */
+.schedule-cell .mt-2 {
+    margin-top: 0.75rem !important;
+}
+
+/* Comma-separated employee names */
+.schedule-cell .mt-2 div {
+    margin-bottom: 4px;
+    line-height: 1.3;
+    white-space: normal; /* Allow wrapping */
+    word-wrap: break-word;
+}
+
+/* Add a subtle divider between team groups */
+.schedule-cell .mt-2 div + div {
+    border-top: 1px dotted #eee;
+    padding-top: 3px;
+}
+
+/* Exception for absent employee line */
+.schedule-cell .mt-2 div.text-danger {
+    border-top: 1px solid #ffcdd2;
+    padding-top: 3px;
+    margin-top: 3px;
+    background-color: #fff8f8;
+    padding: 2px;
+    border-radius: 3px;
+}
+
+/* Style for skills section at bottom */
+.shift-skills-summary {
+    position: static;
+    margin-top: 10px !important;
+    padding: 4px 8px !important;
+    border-top: 1px solid #e9ecef;
+    font-size: 70%;
+    color: #6c757d;
+    background-color: #f8f9fa;
+    border-radius: 0 0 0.25rem 0.25rem;
+    width: 100%;
+    overflow: hidden;
+}
+
+.shift-skills-summary strong {
+    font-weight: normal;
+    font-style: italic;
+    margin-right: 3px;
+}
+
+/* Show full skills on hover */
+.shift-skills-summary:hover {
+    z-index: 100;
 }
 
 .team-badge {
@@ -207,11 +263,13 @@ s {
 }
 
 .shift-skills-summary .badge {
-    background-color: #f8f9fa !important;
-    color: #6c757d !important;
+    background-color: #e2e8f0 !important;
+    color: #4a5568 !important;
     font-weight: normal;
     border: 1px solid #e9ecef;
     margin-right: 3px;
+    margin-bottom: 2px;
+    display: inline-block;
     font-size: 75%;
     padding: 1px 4px;
 }
@@ -265,4 +323,47 @@ s {
     font-weight: normal;
     border: 1px solid #dee2e6;
     padding: 2px 5px;
+}
+
+/* Styles for skills row in schedule table */
+.skills-row {
+    background-color: #f8f9fa;
+}
+
+.skills-row td {
+    padding-top: 4px;
+    padding-bottom: 8px;
+    border-top: none;
+}
+
+.skills-row .shift-skills-summary {
+    position: static !important;
+    width: 100% !important;
+    margin: 0 !important;
+    border-top: none !important;
+    background-color: #f8f9fa;
+    padding: 0px 0px !important;
+    border-radius: 0 0 4px 4px;
+}
+
+.skills-row .shift-skills-summary .badge {
+    margin-bottom: 3px;
+}
+
+/* Remove bottom border from rows before skills row */
+tr + tr.skills-row {
+    border-top: none;
+}
+
+tr + tr.skills-row td {
+    padding-top: 0;
+}
+
+/* Alternative approach without using :has selector */
+.employee-skills-row {
+    border-bottom: none;
+}
+
+tr.skills-row td {
+    padding-top: 0;
 } 
