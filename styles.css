@@ -292,12 +292,12 @@ s {
 
 #weekly-skill-summary {
     box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
-    margin-top: 20px; /* Add margin to separate it from the schedule table */
+    margin-top: 80px !important; /* Add margin to separate it from the schedule table */
     border: 1px solid #e9ecef;
 }
 
 #weekly-skill-summary .card-header {
-    background-color: #f8f9fa;
+    background-color: #e6edf5;
     color: #6c757d;
     font-weight: normal;
     font-size: 90%;
@@ -366,4 +366,15 @@ tr + tr.skills-row td {
 
 tr.skills-row td {
     padding-top: 0;
+}
+
+/* Skills toggle switch styling */
+#skills-toggle-container {
+    vertical-align: middle;
+    padding: 0 12px;
+}
+
+#skills-toggle-container .form-check-label {
+    color: #495057;
+    font-size: 0.9rem;
 } 

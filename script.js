@@ -97,6 +97,9 @@ function updateUILanguage() {
     else if (currentView === 'employees') updateEmployeesView();
     else if (currentView === 'teams') updateTeamsView();
     else if (currentView === 'skills') updateSkillsView();
+    
+    // Update the date range button text
+    updateDateRangeButtonText();
 }
 
 function updateScheduleView() {
@@ -104,6 +107,46 @@ function updateScheduleView() {
     document.querySelector('label[for="week-selector"]').textContent = t('schedule.selectWeek');
     document.getElementById('export-button').textContent = t('schedule.exportToExcel');
     document.getElementById('plan-button').textContent = t('schedule.generatePlan');
+    
+    // Add skills toggle if it doesn't exist yet
+    if (!document.getElementById('skills-toggle-container')) {
+        const exportButton = document.getElementById('export-button');
+        
+        // Create toggle container
+        const toggleContainer = document.createElement('div');
+        toggleContainer.id = 'skills-toggle-container';
+        toggleContainer.classList.add('form-check', 'form-switch', 'ms-2', 'd-inline-block');
+        
+        // Create toggle input
+        const toggleInput = document.createElement('input');
+        toggleInput.type = 'checkbox';
+        toggleInput.id = 'skills-toggle';
+        toggleInput.classList.add('form-check-input');
+        toggleInput.checked = true; // Set it to checked by default
+        toggleInput.addEventListener('change', function() {
+            const skillsRows = document.querySelectorAll('.skills-row');
+            skillsRows.forEach(row => {
+                if (this.checked) {
+                    row.style.display = '';
+                } else {
+                    row.style.display = 'none';
+                }
+            });
+        });
+        
+        // Create toggle label
+        const toggleLabel = document.createElement('label');
+        toggleLabel.classList.add('form-check-label', 'ms-1');
+        toggleLabel.setAttribute('for', 'skills-toggle');
+        toggleLabel.textContent = 'Show Skills';
+        
+        // Add toggle elements to container
+        toggleContainer.appendChild(toggleInput);
+        toggleContainer.appendChild(toggleLabel);
+        
+        // Insert toggle before the export button
+        exportButton.parentNode.insertBefore(toggleContainer, exportButton);
+    }
     
     // Update table headers
     const scheduleHeaders = document.querySelectorAll('#schedule-table thead th');
@@ -204,15 +247,51 @@ function initModals() {
             loadingIndicator.classList.add('d-none');
         }
         
-        const employeeModalEl = document.getElementById('employee-modal');
-        const shiftEditModalEl = document.getElementById('shift-edit-modal');
+        // Employee modal elements
+        elements.employeeModal = new bootstrap.Modal(document.getElementById('employee-modal'));
+        elements.employeeForm = document.getElementById('employee-form');
+        elements.employeeId = document.getElementById('employee-id');
+        elements.employeeName = document.getElementById('employee-name');
+        elements.employeeTeam = document.getElementById('employee-team');
+        elements.employeeSkills = document.getElementById('employee-skills');
+        elements.absentDatesContainer = document.getElementById('absent-dates-container');
+        elements.addDateBtn = document.getElementById('add-date-btn');
+        elements.saveEmployeeBtn = document.getElementById('save-employee-btn');
         
-        if (!employeeModalEl || !shiftEditModalEl) {
+        // Add date range button
+        const addDateRangeBtn = document.createElement('button');
+        addDateRangeBtn.type = 'button';
+        addDateRangeBtn.id = 'add-date-range-btn';
+        addDateRangeBtn.classList.add('btn', 'btn-outline-primary', 'mt-2', 'ms-2');
+        addDateRangeBtn.textContent = currentLanguage === 'de' ? 'Zeitraum hinzufügen' : 'Add Date Range';
+        addDateRangeBtn.addEventListener('click', addAbsentDateRange);
+        
+        // Insert the new button after the existing "Add Absent Date" button
+        elements.addDateBtn.parentNode.appendChild(addDateRangeBtn);
+
+        const shiftEditModalEl = document.getElementById('shift-edit-modal');
+        const skillModalEl = document.getElementById('skill-modal');
+        
+        if (!document.getElementById('employee-modal') || !shiftEditModalEl || !skillModalEl) {
             throw new Error('Modal elements not found in the DOM');
         }
         
-        elements.employeeModal = new bootstrap.Modal(employeeModalEl);
         elements.shiftEditModal = new bootstrap.Modal(shiftEditModalEl);
+        elements.skillModal = new bootstrap.Modal(skillModalEl);
+        
+        // Initialize other modal elements
+        elements.shiftEditForm = document.getElementById('shift-edit-form');
+        elements.shiftDay = document.getElementById('shift-day');
+        elements.shiftType = document.getElementById('shift-type');
+        elements.shiftEmployees = document.getElementById('shift-employees');
+        elements.shiftInfoLabel = document.getElementById('shift-info-label');
+        elements.saveShiftBtn = document.getElementById('save-shift-btn');
+        
+        elements.skillForm = document.getElementById('skill-form');
+        elements.skillId = document.getElementById('skill-id');
+        elements.skillName = document.getElementById('skill-name');
+        elements.skillDescription = document.getElementById('skill-description');
+        elements.saveSkillBtn = document.getElementById('save-skill-btn');
         
         return true;
     } catch (error) {
@@ -1810,7 +1889,7 @@ function updateVersionControls(weekIndex, activeVersion) {
     // Generate version control HTML - removing the Switch Version button since we'll switch automatically
     versionControls.innerHTML = `
         <div class="d-flex align-items-center">
-            <label class="me-2"><strong>Versions:</strong></label>
+            <label class="me-2"><strong>${t('schedule.versions')}:</strong></label>
             <select id="version-selector" class="form-select me-2" ${isLocked ? 'disabled' : ''}>
                 ${Object.entries(versions).map(([key, version]) => `
                     <option value="${key}" ${version.isActive ? 'selected' : ''}>
@@ -1819,7 +1898,7 @@ function updateVersionControls(weekIndex, activeVersion) {
                 `).join('')}
             </select>
             <button id="new-version-btn" class="btn btn-outline-primary btn-sm" ${isLocked ? 'disabled' : ''}>
-                Save as New Version
+                ${t('schedule.saveAsNewVersion')}
             </button>
         </div>
     `;
@@ -1885,77 +1964,85 @@ function directSwitchVersion(weekIndex, versionKey) {
 
 // Render employees table
 function renderEmployees() {
-    const tbody = elements.employeesTable.querySelector('tbody');
-    tbody.innerHTML = '';
+    const employeesTable = document.getElementById('employees-table').getElementsByTagName('tbody')[0];
+    employeesTable.innerHTML = '';
     
-    appData.employees.forEach(employee => {
+    appData.employees.sort((a, b) => a.name.localeCompare(b.name)).forEach(employee => {
         const row = document.createElement('tr');
         
-        // Name column
+        // Name cell
         const nameCell = document.createElement('td');
         nameCell.textContent = employee.name;
         row.appendChild(nameCell);
         
-        // Team column
+        // Team cell
         const teamCell = document.createElement('td');
         const teamBadge = document.createElement('span');
         teamBadge.classList.add('team-badge', `team-${employee.team.toLowerCase()}-badge`);
-        teamBadge.textContent = `Team ${employee.team}`;
+        teamBadge.textContent = t(`teams.team${employee.team}`);
         teamCell.appendChild(teamBadge);
         row.appendChild(teamCell);
         
-        // Skills column
+        // Skills cell
         const skillsCell = document.createElement('td');
         if (employee.skills && employee.skills.length > 0) {
+            const skillsList = document.createElement('div');
+            skillsList.classList.add('skills-summary');
+            
             employee.skills.forEach(skillId => {
                 const skill = appData.skills.find(s => s.id === skillId);
                 if (skill) {
-                    const skillBadge = document.createElement('span');
-                    skillBadge.classList.add('badge', 'bg-info', 'me-1', 'mb-1');
-                    skillBadge.textContent = skill.name;
-                    skillBadge.title = skill.description;
-                    skillsCell.appendChild(skillBadge);
+                    const badge = document.createElement('span');
+                    badge.classList.add('badge');
+                    badge.textContent = skill.name;
+                    skillsList.appendChild(badge);
                 }
             });
+            
+            skillsCell.appendChild(skillsList);
         } else {
-            skillsCell.textContent = 'None';
+            skillsCell.textContent = '-';
         }
         row.appendChild(skillsCell);
         
-        // Absent dates column
+        // Absent dates cell
         const absentCell = document.createElement('td');
         if (employee.absentDates && employee.absentDates.length > 0) {
-            employee.absentDates.forEach(dateStr => {
-                const date = new Date(dateStr);
+            employee.absentDates.forEach(date => {
                 const datePill = document.createElement('span');
                 datePill.classList.add('absent-date-pill');
-                datePill.textContent = formatDate(date);
+                datePill.textContent = formatDate(new Date(date));
                 absentCell.appendChild(datePill);
             });
         } else {
-            absentCell.textContent = 'None';
+            absentCell.textContent = '-';
         }
         row.appendChild(absentCell);
         
-        // Actions column
+        // Actions cell
         const actionsCell = document.createElement('td');
         
-        const editButton = document.createElement('button');
-        editButton.classList.add('btn', 'btn-sm', 'btn-outline-primary', 'me-2');
-        editButton.textContent = 'Edit';
-        editButton.addEventListener('click', () => openEmployeeModal(employee));
+        // Edit button
+        const editBtn = document.createElement('button');
+        editBtn.classList.add('btn', 'btn-sm', 'btn-outline-primary', 'me-2');
+        editBtn.textContent = t('common.edit');
+        editBtn.addEventListener('click', () => openEmployeeModal(employee));
+        actionsCell.appendChild(editBtn);
         
-        const deleteButton = document.createElement('button');
-        deleteButton.classList.add('btn', 'btn-sm', 'btn-outline-danger');
-        deleteButton.textContent = 'Delete';
-        deleteButton.addEventListener('click', () => deleteEmployee(employee.id));
-        
-        actionsCell.appendChild(editButton);
-        actionsCell.appendChild(deleteButton);
+        // Delete button
+        const deleteBtn = document.createElement('button');
+        deleteBtn.classList.add('btn', 'btn-sm', 'btn-outline-danger');
+        deleteBtn.textContent = t('common.delete');
+        deleteBtn.addEventListener('click', () => {
+            if (confirm(t('employees.confirmDelete'))) {
+                deleteEmployee(employee.id);
+            }
+        });
+        actionsCell.appendChild(deleteBtn);
         
         row.appendChild(actionsCell);
         
-        tbody.appendChild(row);
+        employeesTable.appendChild(row);
     });
 }
 
@@ -2080,6 +2167,116 @@ function addAbsentDateInput(dateStr = '') {
     container.appendChild(button);
     
     elements.absentDatesContainer.appendChild(container);
+}
+
+// Add a date range selector for absences
+function addAbsentDateRange() {
+    const container = document.createElement('div');
+    container.classList.add('card', 'mb-3', 'p-3');
+    
+    const title = document.createElement('h6');
+    title.textContent = currentLanguage === 'de' ? 'Abwesenheitszeitraum hinzufügen' : 'Add Absence Range';
+    title.classList.add('mb-3');
+    
+    const rangeRow = document.createElement('div');
+    rangeRow.classList.add('row', 'g-2', 'mb-2');
+    
+    // Start date column
+    const startCol = document.createElement('div');
+    startCol.classList.add('col-sm-5');
+    
+    const startLabel = document.createElement('label');
+    startLabel.classList.add('form-label');
+    startLabel.textContent = currentLanguage === 'de' ? 'Von' : 'From';
+    
+    const startInput = document.createElement('input');
+    startInput.type = 'date';
+    startInput.classList.add('form-control', 'range-start-date');
+    
+    startCol.appendChild(startLabel);
+    startCol.appendChild(startInput);
+    
+    // End date column
+    const endCol = document.createElement('div');
+    endCol.classList.add('col-sm-5');
+    
+    const endLabel = document.createElement('label');
+    endLabel.classList.add('form-label');
+    endLabel.textContent = currentLanguage === 'de' ? 'Bis' : 'To';
+    
+    const endInput = document.createElement('input');
+    endInput.type = 'date';
+    endInput.classList.add('form-control', 'range-end-date');
+    
+    endCol.appendChild(endLabel);
+    endCol.appendChild(endInput);
+    
+    // Add button column
+    const btnCol = document.createElement('div');
+    btnCol.classList.add('col-sm-2', 'd-flex', 'align-items-end');
+    
+    const addBtn = document.createElement('button');
+    addBtn.type = 'button';
+    addBtn.classList.add('btn', 'btn-primary', 'w-100');
+    addBtn.textContent = currentLanguage === 'de' ? 'Hinzufügen' : 'Add';
+    addBtn.addEventListener('click', () => {
+        const startDate = new Date(startInput.value);
+        const endDate = new Date(endInput.value);
+        
+        if (!startInput.value || !endInput.value) {
+            alert(currentLanguage === 'de' ? 'Bitte geben Sie Start- und Enddatum ein' : 'Please enter both start and end dates');
+            return;
+        }
+        
+        if (startDate > endDate) {
+            alert(currentLanguage === 'de' ? 'Das Startdatum muss vor dem Enddatum liegen' : 'Start date must be before end date');
+            return;
+        }
+        
+        // Add each day in the range as an individual absent date
+        const dates = getDatesInRange(startDate, endDate);
+        dates.forEach(dateStr => {
+            addAbsentDateInput(dateStr);
+        });
+        
+        // Clear the inputs
+        startInput.value = '';
+        endInput.value = '';
+    });
+    
+    btnCol.appendChild(addBtn);
+    
+    // Close button for the range selector
+    const closeBtn = document.createElement('button');
+    closeBtn.type = 'button';
+    closeBtn.classList.add('btn-close', 'position-absolute', 'top-0', 'end-0', 'm-2');
+    closeBtn.addEventListener('click', () => container.remove());
+    
+    rangeRow.appendChild(startCol);
+    rangeRow.appendChild(endCol);
+    rangeRow.appendChild(btnCol);
+    
+    container.appendChild(title);
+    container.appendChild(rangeRow);
+    container.appendChild(closeBtn);
+    
+    // Add the date range selector before the individual date inputs
+    elements.absentDatesContainer.parentElement.insertBefore(container, elements.absentDatesContainer);
+}
+
+// Helper function to get all dates in a range (inclusive)
+function getDatesInRange(startDate, endDate) {
+    const dates = [];
+    const currentDate = new Date(startDate);
+    
+    // Loop until we reach the end date
+    while (currentDate <= endDate) {
+        dates.push(formatDateISO(currentDate));
+        // Move to the next day
+        currentDate.setDate(currentDate.getDate() + 1);
+    }
+    
+    return dates;
 }
 
 // Save employee data
@@ -2393,59 +2590,67 @@ function showFeatureInfo() {
 
 // Render skills table and management
 function renderSkills() {
-    if (!elements.skillsTable) return;
+    const skillsTable = document.getElementById('skills-table').getElementsByTagName('tbody')[0];
+    skillsTable.innerHTML = '';
     
-    const tbody = elements.skillsTable.querySelector('tbody');
-    tbody.innerHTML = '';
-    
-    appData.skills.forEach(skill => {
+    appData.skills.sort((a, b) => a.name.localeCompare(b.name)).forEach(skill => {
         const row = document.createElement('tr');
         
-        // Name column
+        // Name cell
         const nameCell = document.createElement('td');
         nameCell.textContent = skill.name;
         row.appendChild(nameCell);
         
-        // Description column
+        // Description cell
         const descCell = document.createElement('td');
-        descCell.textContent = skill.description || 'No description';
+        descCell.textContent = skill.description || '-';
         row.appendChild(descCell);
         
-        // Employees with this skill column
+        // Employees with skill cell
         const employeesCell = document.createElement('td');
-        const employeesWithSkill = appData.employees.filter(e => e.skills && e.skills.includes(skill.id));
+        const employeesWithSkill = appData.employees.filter(emp => emp.skills && emp.skills.includes(skill.id));
         
         if (employeesWithSkill.length > 0) {
-            employeesWithSkill.forEach(employee => {
+            const employeesList = document.createElement('div');
+            employeesList.classList.add('skills-summary');
+            
+            employeesWithSkill.forEach(emp => {
                 const badge = document.createElement('span');
-                badge.classList.add('badge', 'bg-secondary', 'me-1', 'mb-1');
-                badge.textContent = employee.name;
-                employeesCell.appendChild(badge);
+                badge.classList.add('badge');
+                badge.textContent = emp.name;
+                employeesList.appendChild(badge);
             });
+            
+            employeesCell.appendChild(employeesList);
         } else {
-            employeesCell.textContent = 'No employees have this skill';
+            employeesCell.textContent = '-';
         }
         row.appendChild(employeesCell);
         
-        // Actions column
+        // Actions cell
         const actionsCell = document.createElement('td');
         
-        const editButton = document.createElement('button');
-        editButton.classList.add('btn', 'btn-sm', 'btn-outline-primary', 'me-2');
-        editButton.textContent = 'Edit';
-        editButton.addEventListener('click', () => openSkillModal(skill));
+        // Edit button
+        const editBtn = document.createElement('button');
+        editBtn.classList.add('btn', 'btn-sm', 'btn-outline-primary', 'me-2');
+        editBtn.textContent = t('common.edit');
+        editBtn.addEventListener('click', () => openSkillModal(skill));
+        actionsCell.appendChild(editBtn);
         
-        const deleteButton = document.createElement('button');
-        deleteButton.classList.add('btn', 'btn-sm', 'btn-outline-danger');
-        deleteButton.textContent = 'Delete';
-        deleteButton.addEventListener('click', () => deleteSkill(skill.id));
-        
-        actionsCell.appendChild(editButton);
-        actionsCell.appendChild(deleteButton);
+        // Delete button
+        const deleteBtn = document.createElement('button');
+        deleteBtn.classList.add('btn', 'btn-sm', 'btn-outline-danger');
+        deleteBtn.textContent = t('common.delete');
+        deleteBtn.addEventListener('click', () => {
+            if (confirm(t('skills.confirmDelete'))) {
+                deleteSkill(skill.id);
+            }
+        });
+        actionsCell.appendChild(deleteBtn);
         
         row.appendChild(actionsCell);
         
-        tbody.appendChild(row);
+        skillsTable.appendChild(row);
     });
 }
 
@@ -2576,7 +2781,7 @@ function updateWeekLabel(weekIndex) {
     const weekDates = appData.weekDates[weekIndex];
     if (!weekDates || weekDates.length === 0) {
         // Fallback to index if no dates available
-        weekLabelWrapper.innerHTML = `<label class="me-2" style="margin-bottom: 0;"><strong>Week ${weekIndex + 1}:</strong></label>`;
+        weekLabelWrapper.innerHTML = `<label class="me-2" style="margin-bottom: 0;"><strong>${t('schedule.weekLabel')} ${weekIndex + 1}:</strong></label>`;
         return;
     }
     
@@ -2587,7 +2792,7 @@ function updateWeekLabel(weekIndex) {
     const weekNumber = getWeekNumber(mondayDate);
     
     // Set the content of the week label with the calendar week number
-    weekLabelWrapper.innerHTML = `<label class="me-2" style="margin-bottom: 0;"><strong>Week ${weekNumber}:</strong></label>`;
+    weekLabelWrapper.innerHTML = `<label class="me-2" style="margin-bottom: 0;"><strong>${t('schedule.weekLabel')} ${weekNumber}:</strong></label>`;
 }
 
 // Format date for filename

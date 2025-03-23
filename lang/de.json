@@ -38,7 +38,9 @@
     "employeesWithSkill": "Mitarbeiter mit dieser Fähigkeit verfügbar",
     "weekIsLocked": "Diese Woche ist gesperrt. Entsperren Sie sie, um Änderungen vorzunehmen.",
     "confirmLock": "Sind Sie sicher, dass Sie diese Woche sperren möchten? Dies verhindert weitere Änderungen, bis die Woche entsperrt wird.",
-    "confirmUnlock": "Sind Sie sicher, dass Sie diese Woche entsperren möchten? Dies ermöglicht Änderungen am Zeitplan."
+    "confirmUnlock": "Sind Sie sicher, dass Sie diese Woche entsperren möchten? Dies ermöglicht Änderungen am Zeitplan.",
+    "saveAsNewVersion": "Als neue Version speichern",
+    "versions": "Versionen"
   },
   "days": {
     "monday": "Montag",
@@ -107,14 +109,17 @@
       "cancel": "Abbrechen",
       "save": "Speichern",
       "close": "Schließen",
-      "generate": "Generieren"
+      "generate": "Generieren",
+      "edit": "Bearbeiten",
+      "delete": "Löschen"
     }
   },
   "common": {
     "edit": "Bearbeiten",
     "delete": "Löschen",
     "confirm": "Bestätigen",
-    "cancel": "Abbrechen"
+    "cancel": "Abbrechen",
+    "save": "Speichern"
   },
   "notifications": {
     "importSuccess": "Daten erfolgreich importiert!",
@@ -139,5 +144,6 @@
   "language": {
     "name": "Deutsch",
     "select": "Sprache"
-  }
+  },
+  "absent": "Abwesend"
 } 
