@@ -30,9 +30,11 @@ function exportToExcel() {
         const activeVersion = getActiveVersion(weekIndex);
         
         const weekNumber = getWeekNumber(startDate);
-        const weekTitle = `Week ${weekNumber}: ${formatDate(startDate)} - ${formatDate(endDate)}`;
-        const versionInfo = activeVersion ? activeVersion.name : 'Default';
-        const statusInfo = isLocked ? 'LOCKED 🔒' : 'EDITABLE';
+        const weekTitle = currentLanguage === 'de' 
+            ? `Woche ${weekNumber}: ${formatDate(startDate)} - ${formatDate(endDate)}`
+            : `Week ${weekNumber}: ${formatDate(startDate)} - ${formatDate(endDate)}`;
+        const versionInfo = activeVersion ? activeVersion.name : (currentLanguage === 'de' ? 'Standard' : 'Default');
+        const statusInfo = isLocked ? 'LOCKED 🔒' : (currentLanguage === 'de' ? 'BEARBEITBAR' : 'EDITABLE');
         
         // Define colors
         const colors = {
@@ -52,14 +54,27 @@ function exportToExcel() {
             absentText: '9C0006'
         };
         
+        // Define translations for various terms
+        const translations = {
+            shifts: {
+                AM: currentLanguage === 'de' ? 'Frühschicht' : 'AM',
+                PM: currentLanguage === 'de' ? 'Spätschicht' : 'PM',
+                Night: currentLanguage === 'de' ? 'Nachtschicht' : 'Night'
+            },
+            team: currentLanguage === 'de' ? 'Team' : 'Team',
+            absent: currentLanguage === 'de' ? 'ABWESEND' : 'ABSENT',
+            skills: currentLanguage === 'de' ? 'Fähigkeiten' : 'Skills',
+            noEmployees: currentLanguage === 'de' ? 'Keine Mitarbeiter' : 'No employees'
+        };
+        
         // 1. Create Weekly Summary Sheet
-        createWeeklySummarySheet(workbook, weekIndex, weekTitle, versionInfo, statusInfo, colors);
+        createWeeklySummarySheet(workbook, weekIndex, weekTitle, versionInfo, statusInfo, colors, translations);
         
         // 2. Create Detailed Schedule Sheet
-        createDetailedScheduleSheet(workbook, weekIndex, weekTitle, versionInfo, statusInfo, colors);
+        createDetailedScheduleSheet(workbook, weekIndex, weekTitle, versionInfo, statusInfo, colors, translations);
         
         // 3. Create Data Records Sheet
-        createDataRecordsSheet(workbook, weekIndex, colors);
+        createDataRecordsSheet(workbook, weekIndex, colors, translations);
         
         // Generate filename
         const formattedDate = formatDateForFilename(new Date());
@@ -128,7 +143,7 @@ function formatDateForFilename(date) {
 }
 
 // Create the Weekly Summary Sheet with ExcelJS
-function createWeeklySummarySheet(workbook, weekIndex, weekTitle, versionInfo, statusInfo, colors) {
+function createWeeklySummarySheet(workbook, weekIndex, weekTitle, versionInfo, statusInfo, colors, translations) {
     const weekSchedule = appData.schedule[weekIndex] || {};
     const weekDates = appData.weekDates[weekIndex] || [];
     
@@ -189,6 +204,17 @@ function createWeeklySummarySheet(workbook, weekIndex, weekTitle, versionInfo, s
     shiftHeaderRow.alignment = { horizontal: 'center', vertical: 'middle' };
     applyCellBorders(shiftHeaderRow, 1, 4);
     
+    // German weekday translations
+    const germanWeekdays = {
+        'Monday': 'Montag',
+        'Tuesday': 'Dienstag',
+        'Wednesday': 'Mittwoch',
+        'Thursday': 'Donnerstag',
+        'Friday': 'Freitag',
+        'Saturday': 'Samstag',
+        'Sunday': 'Sonntag'
+    };
+    
     // Add data for each day
     DAYS_OF_WEEK.forEach((day, dayIndex) => {
         const daySchedule = weekSchedule[day] || {};
@@ -196,15 +222,17 @@ function createWeeklySummarySheet(workbook, weekIndex, weekTitle, versionInfo, s
         const date = dateStr ? new Date(dateStr) : null;
         const dateFormatted = date ? formatDate(date) : '';
         
-        const rowData = [`${day} (${dateFormatted})`];
+        // Translate day name if language is German
+        const displayDay = currentLanguage === 'de' ? germanWeekdays[day] || day : day;
+        const rowData = [`${displayDay} (${dateFormatted})`];
         
         // For each shift type (AM, PM, Night)
         SHIFT_TYPES.forEach(shiftType => {
             const shift = daySchedule[shiftType] || { team: '-', employees: [] };
             const teamCode = shift.team;
             
-            // Format team header text
-            let cellContent = `Team ${teamCode}\n`;
+            // Format team header text - keep this with the original styling
+            let cellContent = `${translations.shifts[shiftType]} ${translations.team} ${teamCode}\n`;
             
             // Add employee names to each shift
             if (shift.employees && shift.employees.length > 0) {
@@ -218,11 +246,11 @@ function createWeeklySummarySheet(workbook, weekIndex, weekTitle, versionInfo, s
                     let employeeText = employee.name;
                     
                     if (isAbsent) {
-                        employeeText += ' (ABSENT)';
+                        employeeText += ` (${translations.absent})`;
                     }
                     
                     if (differentTeam) {
-                        employeeText += ` (Team ${employee.team})`;
+                        employeeText += ` (${translations.team} ${employee.team})`;
                     }
                     
                     return employeeText;
@@ -230,14 +258,28 @@ function createWeeklySummarySheet(workbook, weekIndex, weekTitle, versionInfo, s
                 
                 cellContent += employeeList.join('\n');
             } else {
-                cellContent += currentLanguage === 'de' ? 'Keine Mitarbeiter' : 'No employees';
+                cellContent += translations.noEmployees;
             }
             
             rowData.push(cellContent);
         });
         
         const dataRow = worksheet.addRow(rowData);
-        dataRow.height = 80; // Increase height for employee names
+        
+        // Count the total number of employees across all shifts
+        let totalEmployeesInDay = 0;
+        SHIFT_TYPES.forEach(shiftType => {
+            const shift = daySchedule[shiftType] || { employees: [] };
+            totalEmployeesInDay += shift.employees ? shift.employees.length : 0;
+        });
+        
+        // Use a more compact height calculation
+        const baseHeight = 25;  // Reduced height for headers
+        const heightPerEmployee = 14; // More compact height per employee
+        const calculatedHeight = baseHeight + (heightPerEmployee * totalEmployeesInDay);
+        
+        // Set with a reasonable minimum and maximum
+        dataRow.height = Math.max(35, Math.min(250, calculatedHeight));
         
         // Style the day cell (first column)
         dataRow.getCell(1).font = { size: 11 };
@@ -265,7 +307,32 @@ function createWeeklySummarySheet(workbook, weekIndex, weekTitle, versionInfo, s
                 textColor = colors.teamCText;
             }
             
-            cell.font = { size: 11, color: { argb: textColor } };
+            // Apply rich text formatting to make just the team header bold and colored
+            // while keeping employee names smaller and black
+            const shiftText = rowData[i + 1];
+            const headerEndIndex = shiftText.indexOf('\n');
+            
+            if (headerEndIndex !== -1) {
+                const header = shiftText.substring(0, headerEndIndex + 1);
+                const employees = shiftText.substring(headerEndIndex + 1);
+                
+                cell.value = {
+                    richText: [
+                        { 
+                            text: header, 
+                            font: { size: 11, color: { argb: textColor }, bold: true } 
+                        },
+                        { 
+                            text: employees, 
+                            font: { size: 9, color: { argb: '000000' } } 
+                        }
+                    ]
+                };
+            } else {
+                cell.font = { size: 11, color: { argb: textColor } };
+                cell.value = shiftText;
+            }
+            
             cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: bgColor } };
             cell.alignment = { horizontal: 'left', vertical: 'top', wrapText: true };
             cell.border = getBorderStyle();
@@ -428,7 +495,7 @@ function createWeeklySummarySheet(workbook, weekIndex, weekTitle, versionInfo, s
 }
 
 // Create the Detailed Schedule Sheet with ExcelJS
-function createDetailedScheduleSheet(workbook, weekIndex, weekTitle, versionInfo, statusInfo, colors) {
+function createDetailedScheduleSheet(workbook, weekIndex, weekTitle, versionInfo, statusInfo, colors, translations) {
     const weekSchedule = appData.schedule[weekIndex] || {};
     const weekDates = appData.weekDates[weekIndex] || [];
     
@@ -487,6 +554,17 @@ function createDetailedScheduleSheet(workbook, weekIndex, weekTitle, versionInfo
     headerRow.alignment = { horizontal: 'center', vertical: 'middle' };
     applyCellBorders(headerRow, 1, 4);
     
+    // German weekday translations
+    const germanWeekdays = {
+        'Monday': 'Montag',
+        'Tuesday': 'Dienstag',
+        'Wednesday': 'Mittwoch',
+        'Thursday': 'Donnerstag',
+        'Friday': 'Freitag',
+        'Saturday': 'Samstag',
+        'Sunday': 'Sonntag'
+    };
+    
     // Add data for each day
     DAYS_OF_WEEK.forEach((day, dayIndex) => {
         const daySchedule = weekSchedule[day] || {};
@@ -494,12 +572,14 @@ function createDetailedScheduleSheet(workbook, weekIndex, weekTitle, versionInfo
         const date = dateStr ? new Date(dateStr) : null;
         const dateFormatted = date ? formatDate(date) : '';
         
-        const rowData = [`${day} (${dateFormatted})`];
+        // Translate day name if language is German
+        const displayDay = currentLanguage === 'de' ? germanWeekdays[day] || day : day;
+        const rowData = [`${displayDay} (${dateFormatted})`];
         const employeeDetails = [];
         
         SHIFT_TYPES.forEach(shiftType => {
             const shift = daySchedule[shiftType] || { team: '-', employees: [] };
-            let cellContent = `Team ${shift.team}\n`;
+            let cellContent = `${translations.shifts[shiftType]} ${translations.team} ${shift.team}\n`;
             let employeeList = [];
             
             if (shift.employees && shift.employees.length > 0) {
@@ -513,11 +593,11 @@ function createDetailedScheduleSheet(workbook, weekIndex, weekTitle, versionInfo
                     let employeeText = employee.name;
                     
                     if (isAbsent) {
-                        employeeText += ' (ABSENT)';
+                        employeeText += ` (${translations.absent})`;
                     }
                     
                     if (differentTeam) {
-                        employeeText += ` (Team ${employee.team})`;
+                        employeeText += ` (${translations.team} ${employee.team})`;
                     }
                     
                     // Add skills
@@ -547,7 +627,21 @@ function createDetailedScheduleSheet(workbook, weekIndex, weekTitle, versionInfo
         });
         
         const dataRow = worksheet.addRow(rowData);
-        dataRow.height = 120; // Set tall row for employee lists
+        
+        // Count the total number of employees across all shifts
+        let totalEmployeesInDay = 0;
+        SHIFT_TYPES.forEach(shiftType => {
+            const shift = daySchedule[shiftType] || { employees: [] };
+            totalEmployeesInDay += shift.employees ? shift.employees.length : 0;
+        });
+        
+        // Use a more compact height calculation
+        const baseHeight = 30;  // Reduced height for headers
+        const heightPerEmployee = 16; // More compact height per employee
+        const calculatedHeight = baseHeight + (heightPerEmployee * totalEmployeesInDay);
+        
+        // Set with a reasonable minimum and maximum
+        dataRow.height = Math.max(45, Math.min(300, calculatedHeight));
         
         // Style the day cell (first column)
         dataRow.getCell(1).font = { size: 11 };
@@ -571,7 +665,32 @@ function createDetailedScheduleSheet(workbook, weekIndex, weekTitle, versionInfo
                 bgColor = colors.teamC;
             }
             
-            cell.font = { size: 11 };
+            // Apply rich text formatting to make just the team header bold and colored
+            // while keeping employee names smaller and black
+            const shiftText = rowData[i + 1];
+            const headerEndIndex = shiftText.indexOf('\n');
+            
+            if (headerEndIndex !== -1) {
+                const header = shiftText.substring(0, headerEndIndex + 1);
+                const employees = shiftText.substring(headerEndIndex + 1);
+                
+                cell.value = {
+                    richText: [
+                        { 
+                            text: header, 
+                            font: { size: 11, bold: true } 
+                        },
+                        { 
+                            text: employees, 
+                            font: { size: 9, color: { argb: '000000' } } 
+                        }
+                    ]
+                };
+            } else {
+                cell.font = { size: 11 };
+                cell.value = shiftText;
+            }
+            
             cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: bgColor } };
             cell.alignment = { horizontal: 'left', vertical: 'top', wrapText: true };
             cell.border = getBorderStyle();
@@ -580,7 +699,7 @@ function createDetailedScheduleSheet(workbook, weekIndex, weekTitle, versionInfo
 }
 
 // Create the Data Records Sheet with ExcelJS
-function createDataRecordsSheet(workbook, weekIndex, colors) {
+function createDataRecordsSheet(workbook, weekIndex, colors, translations) {
     // Create sheet
     const worksheet = workbook.addWorksheet(currentLanguage === 'de' ? 'Datensätze' : 'Data Records', {
         properties: { tabColor: { argb: '4472C4' } }
