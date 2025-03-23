@@ -46,6 +46,18 @@ body {
     background-color: #e9ecef;
 }
 
+/* New style for smaller employee names in schedule */
+.schedule-cell div {
+    font-size: 80%;
+    line-height: 1.1;
+    margin-bottom: 2px;
+}
+
+/* Make small text in employee spans (like team indicators) even smaller */
+.schedule-cell div small {
+    font-size: 85%;
+}
+
 .team-badge {
     display: inline-block;
     padding: 0.25em 0.6em;
@@ -182,8 +194,8 @@ s {
 }
 
 .shift-skills-summary {
-    padding: 4px 0;
-    margin-top: 6px;
+    margin-top: 3px !important;
+    padding: 2px 0 !important;
     border-top: 1px dotted #e9ecef;
     font-size: 75%;
     color: #6c757d;
