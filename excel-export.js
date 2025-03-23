@@ -168,23 +168,21 @@ function createWeeklySummarySheet(workbook, weekIndex, weekTitle, versionInfo, s
     // Empty row for spacing
     worksheet.addRow([]);
     
-    // ===== TEAM ASSIGNMENT SECTION =====
-    
-    // Team Assignment header
-    const teamHeader = worksheet.addRow([currentLanguage === 'de' ? 'Wöchentliche Team-Zuweisungsübersicht' : 'Weekly Team Assignment Summary']);
-    teamHeader.height = 25;
-    teamHeader.font = { bold: true, size: 14 };
-    teamHeader.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: colors.headerBg } };
-    teamHeader.alignment = { horizontal: 'left', vertical: 'middle' };
+    // Schedule header
+    const scheduleHeader = worksheet.addRow([currentLanguage === 'de' ? 'Wöchentlicher Zeitplan' : 'Weekly Schedule']);
+    scheduleHeader.height = 25;
+    scheduleHeader.font = { bold: true, size: 14 };
+    scheduleHeader.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: colors.headerBg } };
+    scheduleHeader.alignment = { horizontal: 'left', vertical: 'middle' };
     worksheet.mergeCells('A4:D4');
-    applyCellBorders(teamHeader, 1, 4);
+    applyCellBorders(scheduleHeader, 1, 4);
     
-    // Team table headers
-    const teamTableHeaders = currentLanguage === 'de'
+    // Schedule table headers
+    const scheduleTableHeaders = currentLanguage === 'de'
         ? ['Tag/Datum', 'Frühschicht', 'Spätschicht', 'Nachtschicht']
         : ['Day/Date', 'AM Shift', 'PM Shift', 'Night Shift'];
     
-    const shiftHeaderRow = worksheet.addRow(teamTableHeaders);
+    const shiftHeaderRow = worksheet.addRow(scheduleTableHeaders);
     shiftHeaderRow.height = 20;
     shiftHeaderRow.font = { bold: true, size: 12 };
     shiftHeaderRow.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: colors.subHeaderBg } };
@@ -200,25 +198,46 @@ function createWeeklySummarySheet(workbook, weekIndex, weekTitle, versionInfo, s
         
         const rowData = [`${day} (${dateFormatted})`];
         
+        // For each shift type (AM, PM, Night)
         SHIFT_TYPES.forEach(shiftType => {
             const shift = daySchedule[shiftType] || { team: '-', employees: [] };
             const teamCode = shift.team;
-            const employeeCount = shift.employees ? shift.employees.length : 0;
             
-            // Count absent employees
-            let absentCount = 0;
-            if (shift.employees && dateStr) {
-                absentCount = shift.employees.filter(empId => {
+            // Format team header text
+            let cellContent = `Team ${teamCode}\n`;
+            
+            // Add employee names to each shift
+            if (shift.employees && shift.employees.length > 0) {
+                const employeeList = shift.employees.map(empId => {
                     const employee = appData.employees.find(e => e.id === empId);
-                    return employee && employee.absentDates.includes(dateStr);
-                }).length;
+                    if (!employee) return '';
+                    
+                    const isAbsent = employee.absentDates.includes(dateStr);
+                    const differentTeam = employee.team !== shift.team;
+                    
+                    let employeeText = employee.name;
+                    
+                    if (isAbsent) {
+                        employeeText += ' (ABSENT)';
+                    }
+                    
+                    if (differentTeam) {
+                        employeeText += ` (Team ${employee.team})`;
+                    }
+                    
+                    return employeeText;
+                }).filter(Boolean);
+                
+                cellContent += employeeList.join('\n');
+            } else {
+                cellContent += currentLanguage === 'de' ? 'Keine Mitarbeiter' : 'No employees';
             }
             
-            rowData.push(`Team ${teamCode} (${employeeCount - absentCount}/${employeeCount} available)`);
+            rowData.push(cellContent);
         });
         
         const dataRow = worksheet.addRow(rowData);
-        dataRow.height = 20;
+        dataRow.height = 80; // Increase height for employee names
         
         // Style the day cell (first column)
         dataRow.getCell(1).font = { size: 11 };
@@ -229,8 +248,7 @@ function createWeeklySummarySheet(workbook, weekIndex, weekTitle, versionInfo, s
         // Style shift cells based on team
         for (let i = 0; i < SHIFT_TYPES.length; i++) {
             const cell = dataRow.getCell(i + 2);
-            const cellValue = rowData[i + 1];
-            const teamMatch = cellValue.match(/Team ([A-Z])/);
+            const teamMatch = rowData[i + 1].match(/Team ([A-Z])/);
             const team = teamMatch ? teamMatch[1] : null;
             
             let bgColor = colors.subHeaderBg;
@@ -249,7 +267,7 @@ function createWeeklySummarySheet(workbook, weekIndex, weekTitle, versionInfo, s
             
             cell.font = { size: 11, color: { argb: textColor } };
             cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: bgColor } };
-            cell.alignment = { horizontal: 'center', vertical: 'middle' };
+            cell.alignment = { horizontal: 'left', vertical: 'top', wrapText: true };
             cell.border = getBorderStyle();
         }
     });
